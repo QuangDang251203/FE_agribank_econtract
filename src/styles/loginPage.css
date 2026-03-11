@@ -1,0 +1,21 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(390px, 35%) 1fr;
+  background: #efefef;
+  overflow: hidden;
+}
+
+@media (max-width: 1240px) {
+  .login-page {
+    grid-template-columns: minmax(340px, 38%) 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}
+

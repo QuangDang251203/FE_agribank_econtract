@@ -1,25 +1,45 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from 'react';
+import AppLayout from './components/layout/AppLayout';
+import LoginPage from './components/login/LoginPage';
+
+const validRoutes = ['/login', '/layout'];
+
+function getCurrentRoute() {
+  const { pathname } = window.location;
+
+  if (pathname === '/') {
+    window.history.replaceState({}, '', '/login');
+    return '/login';
+  }
+
+  if (!validRoutes.includes(pathname)) {
+    window.history.replaceState({}, '', '/login');
+    return '/login';
+  }
+
+  return pathname;
+}
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+  const [route, setRoute] = useState(getCurrentRoute);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setRoute(getCurrentRoute());
+    };
+
+    window.addEventListener('popstate', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, []);
+
+  if (route === '/layout') {
+    return <AppLayout />;
+  }
+
+  return <LoginPage />;
 }
 
 export default App;

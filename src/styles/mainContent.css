@@ -1,0 +1,183 @@
+.content-area {
+  flex: 1;
+}
+
+.content-panel {
+  height: 100%;
+  min-height: calc(100vh - 88px);
+  background: #f4f4f4;
+  border: 1px solid #ededed;
+  padding: 18px 18px 0;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #b1b1b1;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.breadcrumbs strong {
+  color: #343434;
+  font-weight: 600;
+}
+
+.content-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.content-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.back-button,
+.button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.back-button {
+  width: 18px;
+  height: 18px;
+  color: #4a4a4a;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.content-heading-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.content-heading-line h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 600;
+  color: #1e1e1e;
+}
+
+.content-heading-line p {
+  margin: 0;
+  font-size: 14px;
+  color: #b3b3b3;
+}
+
+.content-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button {
+  height: 26px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.button-primary {
+  background: #bc1f4a;
+  color: #ffffff;
+}
+
+.button-secondary,
+.button-icon {
+  border: 1px solid #d65573;
+  color: #bc1f4a;
+  background: #ffffff;
+}
+
+.button-icon {
+  width: 32px;
+  padding: 0;
+}
+
+.main-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 0;
+  border-bottom: 1px solid #d8d8d8;
+  width: fit-content;
+  min-width: 320px;
+}
+
+.tab-button {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: #a7a7a7;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.tab-button em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.tab-button.active {
+  color: #bc1f4a;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #f03d62;
+}
+
+.content-body {
+  min-height: 540px;
+}
+
+@media (max-width: 1100px) {
+  .content-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .content-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 900px) {
+  .content-panel {
+    min-height: auto;
+  }
+}
+
