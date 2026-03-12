@@ -1,14 +1,16 @@
 .login-page {
-  min-height: 100vh;
+  min-height: 1080px;
   display: grid;
-  grid-template-columns: minmax(390px, 35%) 1fr;
-  background: #efefef;
-  overflow: hidden;
+  grid-template-columns: 1280px 640px;
+  justify-content: center;
+  background: #ececec;
+  overflow: auto;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1919px) {
   .login-page {
-    grid-template-columns: minmax(340px, 38%) 1fr;
+    min-height: 100vh;
+    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
   }
 }
 

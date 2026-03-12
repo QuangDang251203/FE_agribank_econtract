@@ -13,41 +13,6 @@ function EyeIcon() {
   );
 }
 
-function LoginArrowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="button-icon">
-      <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M8.4 12h6.7m-2.6-2.7 2.7 2.7-2.7 2.7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CaptchaRefreshIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="mini-icon">
-      <path
-        d="M15.5 6.7A6 6 0 1 0 16 10h-1.6a4.4 4.4 0 1 1-1-2.8l-2 2h4.6V4.6l-1.5 2.1Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function CaptchaAudioIcon() {
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="mini-icon">
-      <path
-        d="M8 7.2H5.6v5.6H8l3.4 2.7V4.5L8 7.2Zm6.1.1a3.9 3.9 0 0 1 0 5.4m1.7-7.1a6.2 6.2 0 0 1 0 8.9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function LoginRightPanel() {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -58,75 +23,95 @@ function LoginRightPanel() {
   };
 
   return (
-    <section className="login-right-panel">
-      <div className="right-top-actions">
-        <button type="button" className="language-button">
-          VIE <span>▾</span>
-        </button>
-        <button type="button" className="contact-button">
-          Liên hệ
-        </button>
-      </div>
+    <section className="login-right">
+      <div className="login-right__content">
+        <img src={agribankLogo} alt="Agribank" className="login-right__logo" />
 
-      <div className="login-form-wrap">
-        <img src={agribankLogo} alt="Agribank" className="right-logo" />
-        <p className="welcome-text">Chào mừng đến với</p>
-        <h2>Hệ thống Internet Banking - Khách hàng tổ chức</h2>
+        <div className="login-right__heading">
+          <h1 className="login-right__title">Đăng nhập</h1>
+          <p className="login-right__subtitle">Hệ thống Internet banking - Khách hàng doanh nghiệp</p>
+        </div>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label htmlFor="orgCode">
-            Mã Tổ chức <span className="required-mark">*</span>
-          </label>
-          <input id="orgCode" type="text" autoComplete="organization" />
+        <form className="login-right__form" onSubmit={handleSubmit}>
+          <div className="login-right__field">
+            <label htmlFor="orgCode" className="login-right__label">
+              Mã doanh nghiệp <span className="login-right__required">*</span>
+            </label>
+            <input
+              id="orgCode"
+              type="text"
+              className="login-right__input"
+              autoComplete="organization"
+              placeholder="Vui lòng nhập mã doanh nghiệp"
+            />
+          </div>
 
-          <label htmlFor="userName">
-            Tên đăng nhập <span className="required-mark">*</span>
-          </label>
-          <input id="userName" type="text" autoComplete="username" />
+          <div className="login-right__field">
+            <label htmlFor="userName" className="login-right__label">
+              Tên đăng nhập <span className="login-right__required">*</span>
+            </label>
+            <input
+              id="userName"
+              type="text"
+              className="login-right__input"
+              autoComplete="username"
+              placeholder="Vui lòng nhập tài khoản"
+            />
+          </div>
 
-          <label htmlFor="password">
-            Mật khẩu <span className="required-mark">*</span>
-          </label>
-          <div className="password-row">
-            <input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" />
+          <div className="login-right__field">
+            <label htmlFor="password" className="login-right__label">
+              Mật khẩu <span className="login-right__required">*</span>
+            </label>
+            <div className="login-right__password-field">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                className="login-right__input login-right__input--password"
+                autoComplete="current-password"
+                placeholder="Vui lòng nhập mật khẩu"
+              />
             <button
               type="button"
-              className="eye-button"
+              className="login-right__password-toggle"
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               onClick={() => setShowPassword((value) => !value)}
             >
               <EyeIcon />
             </button>
-          </div>
-
-          <label htmlFor="captcha">
-            Mã ngẫu nhiên <span className="required-mark">*</span>
-          </label>
-          <input id="captcha" type="text" />
-
-          <div className="captcha-row">
-            <div className="captcha-image" aria-label="Captcha image">
-              <span>D</span>
-              <span>Y</span>
-              <span>P</span>
-              <span>S</span>
-              <span>8</span>
-              <span>E</span>
-              <span>E</span>
-            </div>
-            <div className="captcha-actions">
-              <button type="button" className="captcha-action" aria-label="Refresh captcha">
-                <CaptchaRefreshIcon />
-              </button>
-              <button type="button" className="captcha-action" aria-label="Play captcha audio">
-                <CaptchaAudioIcon />
-              </button>
             </div>
           </div>
 
-          <button type="submit" className="login-button">
-            <LoginArrowIcon />
-            <span>Đăng nhập</span>
+          <div className="login-right__captcha-row">
+            <div className="login-right__captcha-column login-right__captcha-column--input">
+              <label htmlFor="captcha" className="login-right__label">
+                Mã xác thực <span className="login-right__required">*</span>
+              </label>
+              <input
+                id="captcha"
+                type="text"
+                className="login-right__input login-right__input--captcha"
+                placeholder="Nhập mã captcha"
+              />
+            </div>
+
+            <div className="login-right__captcha-column login-right__captcha-column--visual">
+              <span className="login-right__label">
+                Mã xác thực <span className="login-right__required">*</span>
+              </span>
+              <div className="login-right__captcha-image" aria-label="Captcha image">
+                <span>T</span>
+                <span>d</span>
+                <span>4</span>
+                <span>e</span>
+                <span>v</span>
+                <span>a</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" className="login-right__submit">
+            Đăng nhập
           </button>
         </form>
       </div>

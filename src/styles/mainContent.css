@@ -38,14 +38,14 @@
   gap: 10px;
 }
 
-.back-button,
-.button {
+.content-back-button,
+.content-action-button {
   border: 0;
   background: transparent;
   cursor: pointer;
 }
 
-.back-button {
+.content-back-button {
   width: 18px;
   height: 18px;
   color: #4a4a4a;
@@ -80,7 +80,7 @@
   gap: 8px;
 }
 
-.button {
+.content-action-button {
   height: 26px;
   border-radius: 4px;
   font-size: 12px;
@@ -92,19 +92,19 @@
   padding: 0 12px;
 }
 
-.button-primary {
+.content-action-button--primary {
   background: #bc1f4a;
   color: #ffffff;
 }
 
-.button-secondary,
-.button-icon {
+.content-action-button--secondary,
+.content-action-button--icon {
   border: 1px solid #d65573;
   color: #bc1f4a;
   background: #ffffff;
 }
 
-.button-icon {
+.content-action-button--icon {
   width: 32px;
   padding: 0;
 }
@@ -125,7 +125,7 @@
   min-width: 320px;
 }
 
-.tab-button {
+.content-tab-button {
   position: relative;
   border: 0;
   background: transparent;
@@ -139,17 +139,17 @@
   cursor: pointer;
 }
 
-.tab-button em {
+.content-tab-button em {
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
 }
 
-.tab-button.active {
+.content-tab-button--active {
   color: #bc1f4a;
 }
 
-.tab-button.active::after {
+.content-tab-button--active::after {
   content: '';
   position: absolute;
   left: 0;
