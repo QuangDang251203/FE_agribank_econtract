@@ -1,3 +1,4 @@
+import { useAuth } from '../../context/AuthContext';
 import agribankLogo from '../../assets/images/agribank_logo.png';
 import '../../styles/header.css';
 
@@ -28,6 +29,16 @@ function BellIcon() {
 }
 
 function Header() {
+  const { user, logout } = useAuth();
+  const username = user?.username || 'User';
+  const firstLetter = username.charAt(0).toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    window.history.replaceState({}, '', '/login');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
 	<header className="home-header">
 	  <div className="home-header__brand-group">
@@ -46,9 +57,18 @@ function Header() {
 		  <BellIcon />
 		</button>
 
-		<button type="button" className="home-header__profile-button" aria-label="Admin profile">
-		  <span className="home-header__profile-avatar">A</span>
-		  <span className="home-header__profile-name">Admin</span>
+		<button type="button" className="home-header__profile-button" aria-label="User profile">
+		  <span className="home-header__profile-avatar">{firstLetter}</span>
+		  <span className="home-header__profile-name">{username}</span>
+		</button>
+
+		<button 
+		  type="button" 
+		  className="home-header__logout-button"
+		  onClick={handleLogout}
+		  aria-label="Logout"
+		>
+		  Logout
 		</button>
 	  </div>
 	</header>

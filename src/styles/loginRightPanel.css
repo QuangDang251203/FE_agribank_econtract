@@ -49,6 +49,16 @@
   align-self: flex-start;
 }
 
+.login-right__error-message {
+  padding: 12px 14px;
+  border-radius: 4px;
+  background-color: #ffe6e6;
+  border: 1px solid #ffcccc;
+  color: #c00;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .login-right__field {
   display: grid;
   gap: 8px;
@@ -215,12 +225,17 @@
   transition: filter 0.2s ease, transform 0.2s ease;
 }
 
-.login-right__submit:hover {
+.login-right__submit:hover:not(:disabled) {
   filter: brightness(1.03);
 }
 
-.login-right__submit:active {
+.login-right__submit:active:not(:disabled) {
   transform: translateY(1px);
+}
+
+.login-right__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1919px) {

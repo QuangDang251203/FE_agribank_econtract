@@ -1,30 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useSavingBooks } from '../../hooks/useSavingBooks';
+import { useCreateContract } from '../../hooks/useCreateContract';
 import '../../styles/loanCreatePage.css';
 import '../../styles/loanCreateModal.css';
 
-const collateralAccounts = [
-  {
-    id: 'deposit-011023089-1',
-    accountNumber: '011023089',
-    amount: '300.000.000',
-    term: '12 tháng',
-    maturityDate: '02/12/2026',
-  },
-  {
-    id: 'deposit-011023089-2',
-    accountNumber: '011023089',
-    amount: '500.000.000',
-    term: '12 tháng',
-    maturityDate: '06/12/2026',
-  },
-  {
-    id: 'deposit-011023089-3',
-    accountNumber: '011023089',
-    amount: '1.000.000.000',
-    term: '12 tháng',
-    maturityDate: '11/09/2026',
-  },
-];
 
 function MinusSquareIcon() {
   return (
@@ -112,7 +92,7 @@ function CollateralCard({ accountNumber, amount, term, maturityDate, selected, o
           <dd>{term}</dd>
         </div>
         <div className="loan-create-page__card-row">
-          <dt>Ngày đến hạn</dt>
+          <dt>Ngày gửi</dt>
           <dd>{maturityDate}</dd>
         </div>
       </dl>
@@ -129,7 +109,7 @@ function SummaryField({ label, value, wide = false }) {
   );
 }
 
-function LoanConfirmationModal({ selectedCollateral, formValues, onClose }) {
+function LoanConfirmationModal({ selectedCollateral, formValues, onClose, onConfirm, confirming }) {
   const loanSummary = useMemo(
     () => ({
       amount: formValues.loanValue || '900.000.000',
@@ -205,9 +185,14 @@ function LoanConfirmationModal({ selectedCollateral, formValues, onClose }) {
         </div>
 
         <footer className="loan-create-modal__footer">
-          <button type="button" className="loan-create-modal__action loan-create-modal__action--primary">
+          <button
+            type="button"
+            className="loan-create-modal__action loan-create-modal__action--primary"
+            onClick={onConfirm}
+            disabled={confirming}
+          >
             <LockIcon />
-            <span>Ký số</span>
+            <span>{confirming ? 'Đang ký số...' : 'Ký số'}</span>
           </button>
           <button type="button" className="loan-create-modal__action loan-create-modal__action--secondary" onClick={onClose}>
             <HomeIcon />
@@ -220,19 +205,64 @@ function LoanConfirmationModal({ selectedCollateral, formValues, onClose }) {
 }
 
 function CreateSecuredLoanPage() {
-  const [selectedCollateralId, setSelectedCollateralId] = useState(collateralAccounts[2].id);
+  const { user } = useAuth();
+  const { savingBooks, loading, error, fetchSavingBooks } = useSavingBooks();
+  const { createContract } = useCreateContract();
+  
+  const [selectedCollateralId, setSelectedCollateralId] = useState(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [collateralAccounts, setCollateralAccounts] = useState([]);
+  const [validationError, setValidationError] = useState('');
+  const [contractLoading, setContractLoading] = useState(false);
+  const [contractError, setContractError] = useState('');
+  const [contractSuccess, setContractSuccess] = useState(false);
+  const [contractCode, setContractCode] = useState('');
   const [formValues, setFormValues] = useState({
-    loanValue: '900.000.000',
-    loanTerm: '12',
-    repaymentMethod: 'end-term',
-    interestRate: '7.9%',
+    loanValue: '',
+    loanTerm: '',
+    repaymentMethod: '',
+    interestRate: '5.8%',
     disbursementAccount: 'default-account',
   });
 
+  // Fetch saving books when component mounts
+  useEffect(() => {
+    if (user?.businessCode) {
+      console.log('📌 Fetching saving books for businessCode:', user.businessCode);
+      fetchSavingBooks(user.businessCode);
+    }
+  }, [user?.businessCode, fetchSavingBooks]);
+
+  // Transform API data to collateral accounts format
+  useEffect(() => {
+    if (savingBooks && savingBooks.length > 0) {
+      const accounts = savingBooks.map((book) => ({
+        id: `saving-${book.id}`,
+        accountNumber: book.client?.businessCode || 'N/A',
+        amount: book.balance ? `${book.balance.toLocaleString('vi-VN')}` : '0',
+        term: book.duration ? `${book.duration} tháng` : 'N/A',
+        maturityDate: book.createdAt ? new Date(book.createdAt).toLocaleDateString('vi-VN') : 'N/A',
+        status: book.status, // 0: inactive, 1: active, 2: closed
+        originalData: book,
+      }));
+
+      setCollateralAccounts(accounts);
+      
+      // Select first active account by default
+      const activeAccount = accounts.find(acc => acc.status === 1);
+      if (activeAccount) {
+        setSelectedCollateralId(activeAccount.id);
+      } else if (accounts.length > 0) {
+        setSelectedCollateralId(accounts[0].id);
+      }
+
+      console.log('✅ Collateral accounts transformed:', accounts);
+    }
+  }, [savingBooks, loading]);
+
   const selectedCollateral = useMemo(
-    () => collateralAccounts.find((item) => item.id === selectedCollateralId) || collateralAccounts[2],
-    [selectedCollateralId]
+    () => collateralAccounts.find((item) => item.id === selectedCollateralId) || collateralAccounts[0],
+    [selectedCollateralId, collateralAccounts]
   );
 
   useEffect(() => {
@@ -263,11 +293,129 @@ function CreateSecuredLoanPage() {
       ...currentValues,
       [name]: value,
     }));
+
+    // Validate loan value if it's changed
+    if (name === 'loanValue' && selectedCollateral) {
+      validateLoanAmount(value, selectedCollateral);
+    }
+  };
+
+  /**
+   * Validate loan amount against 90% of collateral value
+   */
+  const validateLoanAmount = (loanValueStr, collateral) => {
+    if (!loanValueStr) {
+      setValidationError('');
+      return;
+    }
+
+    // Remove spaces and commas, convert to number
+    const loanValue = parseFloat(loanValueStr.replace(/[,\s]/g, ''));
+    
+    if (isNaN(loanValue)) {
+      setValidationError('Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+
+    // Get collateral amount (remove spaces and commas)
+    const collateralValue = parseFloat(collateral.amount.replace(/[,\s.]/g, ''));
+    const maxLoanValue = collateralValue * 0.9;
+
+    if (loanValue > maxLoanValue) {
+      setValidationError(
+        `⚠️ Số tiền vay không được vượt quá 90% giá trị tài sản (${(maxLoanValue).toLocaleString('vi-VN')} VNĐ)`
+      );
+    } else {
+      setValidationError('');
+    }
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    
+    // Validate all required fields
+    if (!formValues.loanValue || !formValues.loanTerm || !formValues.repaymentMethod) {
+      setContractError('Vui lòng điền đầy đủ thông tin khoản vay');
+      return;
+    }
+
+    if (!selectedCollateral) {
+      setContractError('Vui lòng chọn tài sản đảm bảo');
+      return;
+    }
+
+    setContractError('');
     setIsConfirmationOpen(true);
+  };
+
+  const handleSignContract = async () => {
+    try {
+      setContractLoading(true);
+      setContractError('');
+      setContractSuccess(false);
+
+      // Convert form values to ContractDTO format
+      const loanAmount = parseFloat(formValues.loanValue.replace(/[.,\s]/g, ''));
+      const loanTerm = parseInt(formValues.loanTerm, 10);
+
+      // Fixed default interest rate 5.8% (backend expects decimal 0.058)
+      const interestRate = 0.058;
+
+      // Map payment method
+      const paymentMethodMap = {
+        'end-term': 'end-term',
+        'monthly-interest': 'monthly-interest',
+      };
+
+      const savingBookId = Number(selectedCollateral?.originalData?.id);
+      if (!Number.isFinite(savingBookId)) {
+        setContractError('Saving book id không hợp lệ');
+        setContractLoading(false);
+        return;
+      }
+
+      const contractData = {
+        businessCode: user?.businessCode,
+        loanAmount,
+        loanTerm,
+        interestRate,
+        savingBookId,
+        paymentMethod: paymentMethodMap[formValues.repaymentMethod] || formValues.repaymentMethod,
+      };
+
+      console.log('📋 Contract data to send:', contractData);
+
+      // Call API to create contract
+      const result = await createContract(contractData);
+
+      if (result.success) {
+        console.log('✅ Contract created successfully');
+        setContractCode(result.contractCode || '');
+        setContractSuccess(true);
+        setIsConfirmationOpen(false);
+
+        // Show success message for 3 seconds then reset
+        setTimeout(() => {
+          setContractSuccess(false);
+          setFormValues({
+            loanValue: '',
+            loanTerm: '',
+            repaymentMethod: '',
+            interestRate: '5.8%',
+            disbursementAccount: 'default-account',
+          });
+          setSelectedCollateralId(null);
+        }, 3000);
+      } else {
+        setContractError(result.error || 'Tạo hợp đồng thất bại');
+      }
+
+      setContractLoading(false);
+    } catch (err) {
+      console.error('Contract creation error:', err);
+      setContractError(err.message || 'Tạo hợp đồng thất bại');
+      setContractLoading(false);
+    }
   };
 
   return (
@@ -289,22 +437,54 @@ function CreateSecuredLoanPage() {
                 <h3 id="collateral-title">Tài sản đảm bảo (sổ tiết kiệm)</h3>
               </div>
 
-              <div className="loan-create-page__cards">
-                {collateralAccounts.map((item) => (
-                  <CollateralCard
-                    key={item.id}
-                    {...item}
-                    selected={item.id === selectedCollateralId}
-                    onClick={() => setSelectedCollateralId(item.id)}
-                  />
-                ))}
-              </div>
+              {loading && (
+                <div className="loan-create-page__cards" style={{ padding: '20px', textAlign: 'center' }}>
+                  <p>Đang tải danh sách tài sản đảm bảo...</p>
+                </div>
+              )}
+
+              {error && (
+                <div className="loan-create-page__cards" style={{ padding: '20px', textAlign: 'center', color: '#c00' }}>
+                  <p>⚠️ {error}</p>
+                </div>
+              )}
+
+              {!loading && collateralAccounts.length === 0 && (
+                <div className="loan-create-page__cards" style={{ padding: '20px', textAlign: 'center' }}>
+                  <p>Không có tài sản đảm bảo nào</p>
+                </div>
+              )}
+
+              {collateralAccounts.length > 0 && (
+                <div className="loan-create-page__cards">
+                  {collateralAccounts.map((item) => (
+                    <CollateralCard
+                      key={item.id}
+                      {...item}
+                      selected={item.id === selectedCollateralId}
+                      onClick={() => setSelectedCollateralId(item.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className="loan-create-page__block" aria-labelledby="loan-info-title">
               <div className="loan-create-page__block-heading">
                 <h3 id="loan-info-title">Thông tin khoản vay</h3>
               </div>
+
+              {contractError && (
+                <div className="loan-create-page__alert loan-create-page__alert--error">
+                  ⚠️ {contractError}
+                </div>
+              )}
+
+              {contractSuccess && (
+                <div className="loan-create-page__alert loan-create-page__alert--success">
+                  ✅ Tạo hợp đồng thành công! Mã hợp đồng: {contractCode}
+                </div>
+              )}
 
               <form className="loan-create-page__form" onSubmit={handleSubmit}>
                 <div className="loan-create-page__form-row">
@@ -316,11 +496,14 @@ function CreateSecuredLoanPage() {
                     id="loanValue"
                     name="loanValue"
                     type="text"
-                    placeholder="Vui lòng nhập"
-                    className="loan-create-page__field"
+                    placeholder="Điền số tiền vay"
+                    className={`loan-create-page__field ${validationError ? 'loan-create-page__field--error' : ''}`}
                     value={formValues.loanValue}
                     onChange={handleFieldChange}
                   />
+                  {validationError && (
+                    <div className="loan-create-page__error-message">{validationError}</div>
+                  )}
                 </div>
 
                 <div className="loan-create-page__form-row">
@@ -335,9 +518,7 @@ function CreateSecuredLoanPage() {
                       onChange={handleFieldChange}
                       className="loan-create-page__field loan-create-page__field--select"
                     >
-                      <option value="" disabled>
-                        Chọn thời hạn vay
-                      </option>
+                      <option value="">Chọn thời hạn vay</option>
                       <option value="3">3 tháng</option>
                       <option value="6">6 tháng</option>
                       <option value="12">12 tháng</option>
@@ -357,6 +538,7 @@ function CreateSecuredLoanPage() {
                       onChange={handleFieldChange}
                       className="loan-create-page__field loan-create-page__field--select"
                     >
+                      <option value="">Chọn phương thức trả</option>
                       <option value="end-term">Gốc lãi cuối kỳ</option>
                       <option value="monthly-interest">Lãi hàng tháng</option>
                     </select>
@@ -374,6 +556,7 @@ function CreateSecuredLoanPage() {
                     className="loan-create-page__field"
                     value={formValues.interestRate}
                     readOnly
+                    placeholder="5.8%"
                     aria-label="Lãi suất"
                   />
                 </div>
@@ -397,9 +580,13 @@ function CreateSecuredLoanPage() {
                 </div>
 
                 <div className="loan-create-page__actions">
-                  <button type="submit" className="loan-create-page__button loan-create-page__button--primary">
+                  <button 
+                    type="submit" 
+                    className="loan-create-page__button loan-create-page__button--primary"
+                    disabled={!!validationError || contractLoading}
+                  >
                     <LockIcon />
-                    <span>Xác nhận</span>
+                    <span>{contractLoading ? 'Đang tạo hợp đồng...' : 'Xác nhận'}</span>
                   </button>
                   <button type="button" className="loan-create-page__button loan-create-page__button--secondary">
                     <HomeIcon />
@@ -417,6 +604,8 @@ function CreateSecuredLoanPage() {
           selectedCollateral={selectedCollateral}
           formValues={formValues}
           onClose={() => setIsConfirmationOpen(false)}
+          onConfirm={handleSignContract}
+          confirming={contractLoading}
         />
       ) : null}
     </main>

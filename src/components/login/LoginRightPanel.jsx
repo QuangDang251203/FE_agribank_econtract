@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import agribankLogo from '../../assets/images/agribank_logo.png';
+import { useAuth } from '../../context/AuthContext';
+import { useLogin } from '../../hooks/useLogin';
 import '../../styles/loginRightPanel.css';
 
 function EyeIcon() {
@@ -15,11 +17,58 @@ function EyeIcon() {
 
 function LoginRightPanel() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    businessCode: '',
+    username: '',
+    password: '',
+  });
 
-  const handleSubmit = (event) => {
+  const { loading, error, clearError } = useAuth();
+  const { handleLogin } = useLogin();
+
+  /**
+   * Handle input change
+   */
+  const handleInputChange = (event) => {
+    const { id, value } = event.target;
+    
+    // Map input IDs to formData keys
+    const fieldMap = {
+      orgCode: 'businessCode',
+      userName: 'username',
+      password: 'password',
+    };
+
+    const fieldName = fieldMap[id];
+    if (fieldName) {
+      setFormData((prev) => ({
+        ...prev,
+        [fieldName]: value,
+      }));
+    }
+  };
+
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    window.history.pushState({}, '', '/layout');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    clearError();
+
+    // Validate inputs
+    if (!formData.businessCode || !formData.username || !formData.password) {
+      // You can add a validation error here
+      return;
+    }
+
+    // Call login handler
+    const success = await handleLogin(formData);
+
+    if (success) {
+      // Navigate to layout page on successful login
+      window.history.pushState({}, '', '/layout');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
   };
 
   return (
@@ -32,7 +81,13 @@ function LoginRightPanel() {
           <p className="login-right__subtitle">Hệ thống Internet banking - Khách hàng doanh nghiệp</p>
         </div>
 
-        <form className="login-right__form" onSubmit={handleSubmit}>
+        {error && (
+          <div className="login-right__error-message" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form className="login-right__form" onSubmit={handleSubmit} noValidate>
           <div className="login-right__field">
             <label htmlFor="orgCode" className="login-right__label">
               Mã doanh nghiệp <span className="login-right__required">*</span>
@@ -43,6 +98,10 @@ function LoginRightPanel() {
               className="login-right__input"
               autoComplete="organization"
               placeholder="Vui lòng nhập mã doanh nghiệp"
+              value={formData.businessCode}
+              onChange={handleInputChange}
+              disabled={loading}
+              required
             />
           </div>
 
@@ -56,6 +115,10 @@ function LoginRightPanel() {
               className="login-right__input"
               autoComplete="username"
               placeholder="Vui lòng nhập tài khoản"
+              value={formData.username}
+              onChange={handleInputChange}
+              disabled={loading}
+              required
             />
           </div>
 
@@ -70,6 +133,10 @@ function LoginRightPanel() {
                 className="login-right__input login-right__input--password"
                 autoComplete="current-password"
                 placeholder="Vui lòng nhập mật khẩu"
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={loading}
+                required
               />
             <button
               type="button"
@@ -110,8 +177,8 @@ function LoginRightPanel() {
             </div>
           </div>
 
-          <button type="submit" className="login-right__submit">
-            Đăng nhập
+          <button type="submit" className="login-right__submit" disabled={loading}>
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
       </div>
