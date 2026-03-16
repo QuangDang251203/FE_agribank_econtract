@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './components/login/LoginPage';
+import LoanSigningPage from './pages/layout/LoanSigningPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-const validRoutes = ['/login', '/layout'];
+const validRoutes = ['/login', '/layout', '/signing'];
 
 function getCurrentRoute() {
   const { pathname } = window.location;
@@ -49,6 +50,10 @@ function AppContent() {
 
   if (route === '/layout' && isAuthenticated) {
     return <AppLayout />;
+  }
+
+  if (route === '/signing') {
+    return <LoanSigningPage />;
   }
 
   return <LoginPage />;

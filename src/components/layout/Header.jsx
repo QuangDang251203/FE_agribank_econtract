@@ -1,5 +1,11 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import agribankLogo from '../../assets/images/agribank_logo.png';
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  subscribeNotifications,
+} from '../../utils/notificationStore';
 import '../../styles/header.css';
 
 function SearchIcon() {
@@ -32,11 +38,35 @@ function Header() {
   const { user, logout } = useAuth();
   const username = user?.username || 'User';
   const firstLetter = username.charAt(0).toUpperCase();
+  const [notifications, setNotifications] = useState(() => getNotifications());
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const unreadCount = useMemo(
+	() => notifications.filter((item) => !item.read).length,
+	[notifications]
+  );
+
+  useEffect(() => {
+	const unsubscribe = subscribeNotifications(() => {
+	  setNotifications(getNotifications());
+	});
+
+	return unsubscribe;
+  }, []);
 
   const handleLogout = () => {
     logout();
     window.history.replaceState({}, '', '/login');
     window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const handleToggleNotifications = () => {
+	const nextOpen = !isNotificationOpen;
+	setIsNotificationOpen(nextOpen);
+
+	if (nextOpen && unreadCount > 0) {
+	  markAllNotificationsRead();
+	}
   };
 
   return (
@@ -53,9 +83,30 @@ function Header() {
 		  <input type="text" placeholder="Search..." />
 		</label>
 
-		<button type="button" className="home-header__icon-button" aria-label="Notifications">
-		  <BellIcon />
-		</button>
+		<div className="home-header__notification-wrap">
+		  <button type="button" className="home-header__icon-button" aria-label="Notifications" onClick={handleToggleNotifications}>
+		    <BellIcon />
+		    {unreadCount > 0 ? <span className="home-header__notification-badge">{unreadCount}</span> : null}
+		  </button>
+
+		  {isNotificationOpen ? (
+		    <div className="home-header__notification-popover" role="status" aria-live="polite">
+		      <div className="home-header__notification-title">Thông báo</div>
+		      {notifications.length === 0 ? (
+		        <div className="home-header__notification-empty">Chưa có thông báo mới</div>
+		      ) : (
+		        <ul>
+		          {notifications.map((item) => (
+		            <li key={item.id} className={`home-header__notification-item home-header__notification-item--${item.type}`}>
+		              <p>{item.message}</p>
+		              <span>{new Date(item.createdAt).toLocaleTimeString('vi-VN')}</span>
+		            </li>
+		          ))}
+		        </ul>
+		      )}
+		    </div>
+		  ) : null}
+		</div>
 
 		<button type="button" className="home-header__profile-button" aria-label="User profile">
 		  <span className="home-header__profile-avatar">{firstLetter}</span>

@@ -8,13 +8,33 @@ import { createContext, useState, useCallback, useContext } from 'react';
 // Create AuthContext
 const AuthContext = createContext();
 
+const AUTH_USER_STORAGE_KEY = 'authUser';
+
+function getStoredUser() {
+  try {
+    const rawUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
+    if (!rawUser) {
+      return null;
+    }
+
+    const parsedUser = JSON.parse(rawUser);
+    if (!parsedUser?.businessCode || !parsedUser?.username) {
+      return null;
+    }
+
+    return parsedUser;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * AuthProvider Component
  * Wraps the app and provides authentication state
  */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(() => getStoredUser());
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getStoredUser()));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -23,18 +43,35 @@ export function AuthProvider({ children }) {
    * @param {Object} userData - User data from backend
    */
   const login = useCallback((userData) => {
-    setUser(userData);
-    setIsAuthenticated(true);
+    const normalizedUser = {
+      businessCode: userData?.businessCode || '',
+      username: userData?.username || '',
+      token: userData?.token || null,
+      role: userData?.role ?? 1,
+    };
+
+    const canAuthenticate = Boolean(normalizedUser.businessCode && normalizedUser.username);
+
+    setUser(normalizedUser);
+    setIsAuthenticated(canAuthenticate);
     setError(null);
+
+    if (canAuthenticate) {
+      localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(normalizedUser));
+    }
     
     // Store token in localStorage
-    if (userData.token) {
-      localStorage.setItem('authToken', userData.token);
+    if (normalizedUser.token) {
+      localStorage.setItem('authToken', normalizedUser.token);
+    } else {
+      localStorage.removeItem('authToken');
     }
     
     // Store businessCode in localStorage for later use
-    if (userData.businessCode) {
-      localStorage.setItem('businessCode', userData.businessCode);
+    if (normalizedUser.businessCode) {
+      localStorage.setItem('businessCode', normalizedUser.businessCode);
+    } else {
+      localStorage.removeItem('businessCode');
     }
   }, []);
 
@@ -45,6 +82,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setIsAuthenticated(false);
     setError(null);
+    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
     localStorage.removeItem('authToken');
     localStorage.removeItem('businessCode');
   }, []);

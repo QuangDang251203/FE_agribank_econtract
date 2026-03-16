@@ -9,6 +9,7 @@ import SingleTransferPage from '../../pages/layout/SingleTransferPage';
 import BulkTransferPage from '../../pages/layout/BulkTransferPage';
 import SecuredLoanPage from '../../pages/layout/SecuredLoanPage';
 import CreateSecuredLoanPage from '../../pages/layout/CreateSecuredLoanPage';
+import LoanSigningPage from '../../pages/layout/LoanSigningPage';
 import BillPaymentPage from '../../pages/layout/BillPaymentPage';
 import TaxPaymentPage from '../../pages/layout/TaxPaymentPage';
 import OnlineAccountPage from '../../pages/layout/OnlineAccountPage';
@@ -30,6 +31,7 @@ const pageComponentMap = {
   'transfer-bulk-list': BulkTransferPage,
   loan: SecuredLoanPage,
   'loan-create': CreateSecuredLoanPage,
+  'loan-signing': LoanSigningPage,
   'loan-history': SecuredLoanPage,
   bill: BillPaymentPage,
   'bill-electricity': BillPaymentPage,
@@ -45,17 +47,28 @@ const pageComponentMap = {
 
 function AppLayout() {
   const [selectedKey, setSelectedKey] = useState(DEFAULT_SIDEBAR_KEY);
+  const [pageState, setPageState] = useState({});
   const CurrentPage = useMemo(
     () => pageComponentMap[selectedKey] || HomePage,
     [selectedKey]
   );
 
+  const handleSelect = (key) => {
+    setSelectedKey(key);
+    setPageState({});
+  };
+
+  const handleNavigate = (key, nextPageState = {}) => {
+    setSelectedKey(key);
+    setPageState(nextPageState);
+  };
+
   return (
     <div className="home-layout">
       <Header />
       <div className="home-layout__body">
-        <Sidebar selectedKey={selectedKey} onSelect={setSelectedKey} />
-        <CurrentPage />
+        <Sidebar selectedKey={selectedKey} onSelect={handleSelect} />
+        <CurrentPage onNavigate={handleNavigate} pageState={pageState} />
       </div>
     </div>
   );

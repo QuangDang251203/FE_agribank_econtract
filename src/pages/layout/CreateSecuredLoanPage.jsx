@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSavingBooks } from '../../hooks/useSavingBooks';
 import { useCreateContract } from '../../hooks/useCreateContract';
+import {
+  extractContractCodeFromText,
+  saveContractCode,
+} from '../../utils/contractCodeStorage';
 import '../../styles/loanCreatePage.css';
 import '../../styles/loanCreateModal.css';
 
@@ -40,14 +44,13 @@ function CloseIcon() {
   );
 }
 
-function formatLoanValueInWords(value) {
-  const compactValue = String(value).replace(/\./g, '').trim();
-
-  if (compactValue === '900000000') {
-    return 'Chín trăm triệu Việt Nam đồng chẵn';
+function parseMoneyInputToNumber(value) {
+  const digits = String(value || '').replace(/[^\d]/g, '');
+  if (!digits) {
+    return NaN;
   }
 
-  return 'Giá trị khoản vay bằng chữ';
+  return Number(digits);
 }
 
 function resolveLoanTermLabel(value) {
@@ -67,6 +70,34 @@ function resolveRepaymentLabel(value) {
   };
 
   return repaymentMap[value] || 'Gốc, lãi cuối kỳ';
+}
+
+function parseLoanTermToMonths(value) {
+  const months = Number.parseInt(value, 10);
+  return Number.isFinite(months) && months > 0 ? months : 0;
+}
+
+function addMonthsToDate(date, months) {
+  const cloned = new Date(date);
+  cloned.setMonth(cloned.getMonth() + months);
+  return cloned;
+}
+
+function formatDateTimeVN(date) {
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}
+
+async function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 function CollateralCard({ accountNumber, amount, term, maturityDate, selected, onClick }) {
@@ -109,18 +140,26 @@ function SummaryField({ label, value, wide = false }) {
   );
 }
 
-function LoanConfirmationModal({ selectedCollateral, formValues, onClose, onConfirm, confirming }) {
+function LoanConfirmationModal({ selectedCollateral, formValues, amountInWords, onClose, onConfirm, confirming }) {
+  // Keep one effective timestamp for the whole popup session.
+  const [effectiveAt] = useState(() => new Date());
+
   const loanSummary = useMemo(
-    () => ({
-      amount: formValues.loanValue || '900.000.000',
-      amountInWords: formatLoanValueInWords(formValues.loanValue || '900.000.000'),
-      term: resolveLoanTermLabel(formValues.loanTerm),
-      interestRate: formValues.interestRate || '7.9%',
-      repaymentMethod: resolveRepaymentLabel(formValues.repaymentMethod),
-      effectiveDate: '01/03/2026',
-      dueDate: '01/03/2027',
-    }),
-    [formValues]
+    () => {
+      const termMonths = parseLoanTermToMonths(formValues.loanTerm);
+      const dueDate = addMonthsToDate(effectiveAt, termMonths);
+
+      return {
+        amount: formValues.loanValue || '900.000.000',
+        amountInWords: amountInWords || 'Chưa có dữ liệu',
+        term: resolveLoanTermLabel(formValues.loanTerm),
+        interestRate: formValues.interestRate || '5.8%',
+        repaymentMethod: resolveRepaymentLabel(formValues.repaymentMethod),
+        effectiveDate: formatDateTimeVN(effectiveAt),
+        dueDate: formatDateTimeVN(dueDate),
+      };
+    },
+    [formValues, amountInWords, effectiveAt]
   );
 
   return (
@@ -159,7 +198,7 @@ function LoanConfirmationModal({ selectedCollateral, formValues, onClose, onConf
                     <dd>{selectedCollateral.term}</dd>
                   </div>
                   <div>
-                    <dt>Ngày đến hạn</dt>
+                    <dt>Ngày gửi</dt>
                     <dd>{selectedCollateral.maturityDate}</dd>
                   </div>
                 </dl>
@@ -179,7 +218,7 @@ function LoanConfirmationModal({ selectedCollateral, formValues, onClose, onConf
               <SummaryField label="Lãi suất" value={loanSummary.interestRate} />
               <SummaryField label="Phương thức trả" value={loanSummary.repaymentMethod} wide />
               <SummaryField label="Ngày hiệu lực" value={loanSummary.effectiveDate} />
-              <SummaryField label="Hạn đến hạn" value={loanSummary.dueDate} />
+              <SummaryField label="Ngày đến hạn" value={loanSummary.dueDate} />
             </dl>
           </section>
         </div>
@@ -207,7 +246,11 @@ function LoanConfirmationModal({ selectedCollateral, formValues, onClose, onConf
 function CreateSecuredLoanPage() {
   const { user } = useAuth();
   const { savingBooks, loading, error, fetchSavingBooks } = useSavingBooks();
-  const { createContract } = useCreateContract();
+  const {
+    createAndGenerateContract,
+    fetchBankAccounts,
+    convertMoneyToWords,
+  } = useCreateContract();
   
   const [selectedCollateralId, setSelectedCollateralId] = useState(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
@@ -217,12 +260,16 @@ function CreateSecuredLoanPage() {
   const [contractError, setContractError] = useState('');
   const [contractSuccess, setContractSuccess] = useState(false);
   const [contractCode, setContractCode] = useState('');
+  const [disbursementAccounts, setDisbursementAccounts] = useState([]);
+  const [bankAccountLoading, setBankAccountLoading] = useState(false);
+  const [bankAccountError, setBankAccountError] = useState('');
+  const [amountInWords, setAmountInWords] = useState('');
   const [formValues, setFormValues] = useState({
     loanValue: '',
     loanTerm: '',
     repaymentMethod: '',
     interestRate: '5.8%',
-    disbursementAccount: 'default-account',
+    disbursementAccount: '',
   });
 
   // Fetch saving books when component mounts
@@ -232,6 +279,54 @@ function CreateSecuredLoanPage() {
       fetchSavingBooks(user.businessCode);
     }
   }, [user?.businessCode, fetchSavingBooks]);
+
+  useEffect(() => {
+    if (!user?.businessCode) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const loadBankAccounts = async () => {
+      try {
+        setBankAccountLoading(true);
+        setBankAccountError('');
+
+        const accounts = await fetchBankAccounts(user.businessCode);
+        if (!isMounted) {
+          return;
+        }
+
+        const normalizedAccounts = accounts.map((item) => ({
+          id: Number(item.id),
+          accountNumber: item.bankAccountNumber,
+          branchName: item.branchName,
+          label: `${item.bankAccountNumber} - ${item.branchName}`,
+        }));
+
+        setDisbursementAccounts(normalizedAccounts);
+        setFormValues((currentValues) => ({
+          ...currentValues,
+          disbursementAccount: normalizedAccounts[0] ? String(normalizedAccounts[0].id) : '',
+        }));
+      } catch (fetchError) {
+        if (isMounted) {
+          setBankAccountError(fetchError.message || 'Không tải được tài khoản giải ngân');
+          setDisbursementAccounts([]);
+        }
+      } finally {
+        if (isMounted) {
+          setBankAccountLoading(false);
+        }
+      }
+    };
+
+    loadBankAccounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.businessCode, fetchBankAccounts]);
 
   // Transform API data to collateral accounts format
   useEffect(() => {
@@ -266,6 +361,13 @@ function CreateSecuredLoanPage() {
   );
 
   useEffect(() => {
+    if (selectedCollateral && formValues.loanValue) {
+      validateLoanAmount(formValues.loanValue, selectedCollateral);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCollateralId]);
+
+  useEffect(() => {
     if (!isConfirmationOpen) {
       return undefined;
     }
@@ -286,6 +388,37 @@ function CreateSecuredLoanPage() {
       window.removeEventListener('keydown', handleEscape);
     };
   }, [isConfirmationOpen]);
+
+  useEffect(() => {
+    if (!isConfirmationOpen) {
+      return;
+    }
+
+    const parsedLoanAmount = parseMoneyInputToNumber(formValues.loanValue);
+    if (!Number.isFinite(parsedLoanAmount) || parsedLoanAmount <= 0) {
+      setAmountInWords('Giá trị khoản vay bằng chữ');
+      return;
+    }
+
+    let isMounted = true;
+    setAmountInWords('Đang chuyển đổi...');
+
+    convertMoneyToWords(parsedLoanAmount)
+      .then((words) => {
+        if (isMounted) {
+          setAmountInWords(words || 'Không lấy được dữ liệu bằng chữ');
+        }
+      })
+      .catch((convertError) => {
+        if (isMounted) {
+          setAmountInWords(convertError.message || 'Không lấy được dữ liệu bằng chữ');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isConfirmationOpen, formValues.loanValue, convertMoneyToWords]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
@@ -310,7 +443,7 @@ function CreateSecuredLoanPage() {
     }
 
     // Remove spaces and commas, convert to number
-    const loanValue = parseFloat(loanValueStr.replace(/[,\s]/g, ''));
+    const loanValue = parseMoneyInputToNumber(loanValueStr);
     
     if (isNaN(loanValue)) {
       setValidationError('Vui lòng nhập số tiền hợp lệ');
@@ -318,7 +451,7 @@ function CreateSecuredLoanPage() {
     }
 
     // Get collateral amount (remove spaces and commas)
-    const collateralValue = parseFloat(collateral.amount.replace(/[,\s.]/g, ''));
+    const collateralValue = parseMoneyInputToNumber(collateral.amount);
     const maxLoanValue = collateralValue * 0.9;
 
     if (loanValue > maxLoanValue) {
@@ -344,7 +477,13 @@ function CreateSecuredLoanPage() {
       return;
     }
 
+    if (!formValues.disbursementAccount) {
+      setContractError('Vui lòng chọn tài khoản giải ngân');
+      return;
+    }
+
     setContractError('');
+    setAmountInWords('');
     setIsConfirmationOpen(true);
   };
 
@@ -355,8 +494,27 @@ function CreateSecuredLoanPage() {
       setContractSuccess(false);
 
       // Convert form values to ContractDTO format
-      const loanAmount = parseFloat(formValues.loanValue.replace(/[.,\s]/g, ''));
+      const loanAmount = parseMoneyInputToNumber(formValues.loanValue);
       const loanTerm = parseInt(formValues.loanTerm, 10);
+      const bankAccountId = parseInt(formValues.disbursementAccount, 10);
+
+      if (!Number.isFinite(loanAmount) || loanAmount <= 0) {
+        setContractError('Số tiền vay không hợp lệ');
+        setContractLoading(false);
+        return;
+      }
+
+      if (!Number.isInteger(loanTerm) || loanTerm <= 0) {
+        setContractError('Thời hạn vay không hợp lệ');
+        setContractLoading(false);
+        return;
+      }
+
+      if (!Number.isInteger(bankAccountId) || bankAccountId <= 0) {
+        setContractError('Tài khoản giải ngân không hợp lệ');
+        setContractLoading(false);
+        return;
+      }
 
       // Fixed default interest rate 5.8% (backend expects decimal 0.058)
       const interestRate = 0.058;
@@ -368,7 +526,7 @@ function CreateSecuredLoanPage() {
       };
 
       const savingBookId = Number(selectedCollateral?.originalData?.id);
-      if (!Number.isFinite(savingBookId)) {
+      if (!Number.isInteger(savingBookId) || savingBookId <= 0) {
         setContractError('Saving book id không hợp lệ');
         setContractLoading(false);
         return;
@@ -380,40 +538,57 @@ function CreateSecuredLoanPage() {
         loanTerm,
         interestRate,
         savingBookId,
+        bankAccountId,
         paymentMethod: paymentMethodMap[formValues.repaymentMethod] || formValues.repaymentMethod,
       };
 
       console.log('📋 Contract data to send:', contractData);
 
-      // Call API to create contract
-      const result = await createContract(contractData);
+      // New backend flow: create contract + generate PDF in one API.
+      const generated = await createAndGenerateContract(contractData);
+      const fileName = generated.fileName || 'contract.pdf';
+      const createdContractCode =
+        generated.contractCode ||
+        extractContractCodeFromText(fileName);
 
-      if (result.success) {
-        console.log('✅ Contract created successfully');
-        setContractCode(result.contractCode || '');
-        setContractSuccess(true);
-        setIsConfirmationOpen(false);
-
-        // Show success message for 3 seconds then reset
-        setTimeout(() => {
-          setContractSuccess(false);
-          setFormValues({
-            loanValue: '',
-            loanTerm: '',
-            repaymentMethod: '',
-            interestRate: '5.8%',
-            disbursementAccount: 'default-account',
-          });
-          setSelectedCollateralId(null);
-        }, 3000);
-      } else {
-        setContractError(result.error || 'Tạo hợp đồng thất bại');
+      if (createdContractCode) {
+        saveContractCode({
+          businessCode: user?.businessCode,
+          contractCode: createdContractCode,
+          source: 'create-and-generate',
+        });
+        localStorage.setItem('lastContractCode', createdContractCode);
       }
 
-      setContractLoading(false);
+      const base64Data = await blobToBase64(generated.blob);
+      const docKey = `signing-doc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      sessionStorage.setItem(
+        docKey,
+        JSON.stringify({
+          fileName,
+          contentType: generated.contentType || 'application/pdf',
+          data: base64Data,
+        })
+      );
+
+      const targetUrl = `/signing?docKey=${encodeURIComponent(docKey)}${createdContractCode ? `&contractCode=${encodeURIComponent(createdContractCode)}` : ''}`;
+      const openedTab = window.open(targetUrl, '_blank');
+
+      if (!openedTab) {
+        sessionStorage.removeItem(docKey);
+        setContractError('Trinh duyet dang chan mo tab moi. Vui long cho phep popup va thu lai.');
+        return;
+      }
+
+      setContractCode('');
+      setContractSuccess(true);
+      setIsConfirmationOpen(false);
+
     } catch (err) {
       console.error('Contract creation error:', err);
       setContractError(err.message || 'Tạo hợp đồng thất bại');
+    } finally {
       setContractLoading(false);
     }
   };
@@ -482,7 +657,7 @@ function CreateSecuredLoanPage() {
 
               {contractSuccess && (
                 <div className="loan-create-page__alert loan-create-page__alert--success">
-                  ✅ Tạo hợp đồng thành công! Mã hợp đồng: {contractCode}
+                  ✅ Tạo hợp đồng thành công! {contractCode ? `Mã hợp đồng: ${contractCode}` : ''}
                 </div>
               )}
 
@@ -572,11 +747,21 @@ function CreateSecuredLoanPage() {
                       value={formValues.disbursementAccount}
                       onChange={handleFieldChange}
                       className="loan-create-page__field loan-create-page__field--select"
+                      disabled={bankAccountLoading}
                     >
-                      <option value="default-account">012348888 - Chi nhánh Ba Đình</option>
-                      <option value="secondary-account">012349999 - Chi nhánh Hoàn Kiếm</option>
+                      <option value="">
+                        {bankAccountLoading ? 'Đang tải tài khoản giải ngân...' : 'Chọn tài khoản giải ngân'}
+                      </option>
+                      {disbursementAccounts.map((account) => (
+                        <option key={account.id} value={String(account.id)}>
+                          {account.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
+                  {bankAccountError && (
+                    <div className="loan-create-page__error-message">{bankAccountError}</div>
+                  )}
                 </div>
 
                 <div className="loan-create-page__actions">
@@ -603,6 +788,7 @@ function CreateSecuredLoanPage() {
         <LoanConfirmationModal
           selectedCollateral={selectedCollateral}
           formValues={formValues}
+          amountInWords={amountInWords}
           onClose={() => setIsConfirmationOpen(false)}
           onConfirm={handleSignContract}
           confirming={contractLoading}

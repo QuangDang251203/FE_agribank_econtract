@@ -12,6 +12,17 @@ const API_CONFIG = {
     AUTH: {
       LOGIN: '/api/accounts/login',
     },
+    CONTRACT: {
+      CREATE: '/api/contract/createContract',
+      CREATE_AND_GENERATE: '/api/contract/createAndGenerateContract',
+      MONEY_TO_WORDS: '/api/contract/money-to-words',
+      GENERATE_AND_DOWNLOAD: '/api/contract/generate-and-download',
+      SEND_OTP: '/api/contract/send-otp',
+      SIGN_CONTRACT: '/api/contract/signContract',
+    },
+    BANK_ACCOUNT: {
+      GET_BY_BUSINESS_CODE: '/api/bank-accounts/getBankAccountByBusinessCode',
+    },
   },
 
   // HTTP Headers

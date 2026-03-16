@@ -4,7 +4,15 @@
  */
 
 import { useCallback } from 'react';
-import { createContractApi } from '../services/api/contractApi';
+import {
+  createAndGenerateContractApi,
+  createContractApi,
+  generateAndDownloadContractApi,
+  getBankAccountsByBusinessCodeApi,
+  moneyToWordsApi,
+  signContractApi,
+  sendOtpApi,
+} from '../services/api/contractApi';
 
 export function useCreateContract() {
   /**
@@ -29,6 +37,9 @@ export function useCreateContract() {
       if (!contractData.savingBookId) {
         throw new Error('Saving book is required');
       }
+      if (!contractData.bankAccountId) {
+        throw new Error('Bank account is required');
+      }
       if (!contractData.paymentMethod) {
         throw new Error('Payment method is required');
       }
@@ -43,11 +54,17 @@ export function useCreateContract() {
 
       console.log('✅ Contract created successfully:', response);
 
+      const resolvedContractCode =
+        response?.contractCode ||
+        response?.data?.contractCode ||
+        response?.result?.contractCode ||
+        contractData.contractCode ||
+        '';
+
       return {
         success: true,
         data: response,
-        // Backend CommonResponse does not return contractCode in payload
-        contractCode: contractData.contractCode,
+        contractCode: resolvedContractCode,
       };
     } catch (error) {
       console.error('❌ Contract creation error:', error);
@@ -58,8 +75,44 @@ export function useCreateContract() {
     }
   }, []);
 
+  const fetchBankAccounts = useCallback(async (businessCode) => {
+    const response = await getBankAccountsByBusinessCodeApi(businessCode);
+    if (response?.code !== '00') {
+      throw new Error(response?.message || 'Không lấy được danh sách tài khoản giải ngân');
+    }
+
+    return response?.data || [];
+  }, []);
+
+  const convertMoneyToWords = useCallback(async (amount) => {
+    const response = await moneyToWordsApi(amount);
+    return String(response || '').trim();
+  }, []);
+
+  const generateAndDownloadContract = useCallback(async (contractCode) => {
+    return generateAndDownloadContractApi(contractCode);
+  }, []);
+
+  const createAndGenerateContract = useCallback(async (contractData) => {
+    return createAndGenerateContractApi(contractData);
+  }, []);
+
+  const sendOtp = useCallback(async (contractCode) => {
+    return sendOtpApi(contractCode);
+  }, []);
+
+  const signContract = useCallback(async (contractCode, otpCode) => {
+    return signContractApi(contractCode, otpCode);
+  }, []);
+
   return {
     createContract,
+    fetchBankAccounts,
+    convertMoneyToWords,
+    generateAndDownloadContract,
+    createAndGenerateContract,
+    sendOtp,
+    signContract,
   };
 }
 
