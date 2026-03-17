@@ -38,9 +38,10 @@ function SuccessAlertIcon() {
 }
 
 function LoanSigningPage({ onNavigate, pageState }) {
-  const { sendOtp, signContract } = useCreateContract();
+  const { sendOtp, signWithSignature, fetchContractFileByCode } = useCreateContract();
   const canvasRef = useRef(null);
   const otpInputRefs = useRef([]);
+  const objectPreviewRef = useRef('');
   const queryData = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -67,6 +68,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [otpError, setOtpError] = useState('');
   const [otpAttemptCount, setOtpAttemptCount] = useState(0);
+  const [signatureFile, setSignatureFile] = useState(null);
   const [isSigningContract, setIsSigningContract] = useState(false);
   const [statusAlert, setStatusAlert] = useState({ isOpen: false, message: '', type: 'success' });
   const MAX_OTP_ATTEMPTS = 5;
@@ -158,14 +160,32 @@ function LoanSigningPage({ onNavigate, pageState }) {
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+      if (objectPreviewRef.current) {
+        URL.revokeObjectURL(objectPreviewRef.current);
+        objectPreviewRef.current = '';
       }
     };
-  }, [previewUrl]);
+  }, []);
 
   const pushBellNotification = (type, message) => {
     addNotification({ type, message });
+  };
+
+  const refreshSignedContractPreview = async (signedContractCode) => {
+    const signedFile = await fetchContractFileByCode(signedContractCode);
+    if (!signedFile?.blob) {
+      throw new Error('Không tải được bản hợp đồng đã ký');
+    }
+
+    if (objectPreviewRef.current) {
+      URL.revokeObjectURL(objectPreviewRef.current);
+      objectPreviewRef.current = '';
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(signedFile.blob);
+    objectPreviewRef.current = nextPreviewUrl;
+    setPreviewUrl(nextPreviewUrl);
+    setFileName(signedFile.fileName || `${signedContractCode}_signed.pdf`);
   };
 
   useEffect(() => {
@@ -183,8 +203,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
       return;
     }
 
-    context.fillStyle = '#f4f5fc';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);
     context.lineWidth = 2;
     context.lineCap = 'round';
     context.strokeStyle = '#3b3f56';
@@ -218,6 +237,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
     setSignatureError('');
     setHasSignature(false);
     setIsDrawing(false);
+    setSignatureFile(null);
 
     if (!resolvedContractCode) {
       const fallbackCode = normalizeContractCode(
@@ -240,6 +260,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
     setOtpDigits(['', '', '', '', '', '']);
     setOtpError('');
     setOtpAttemptCount(0);
+    setSignatureFile(null);
     setIsSigningContract(false);
   };
 
@@ -248,6 +269,74 @@ function LoanSigningPage({ onNavigate, pageState }) {
     setTimeout(() => {
       otpInputRefs.current[0]?.focus();
     }, 0);
+  };
+
+  const buildSignatureFileFromCanvas = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      throw new Error('Không tìm thấy vùng chữ ký');
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Không thể xử lý chữ ký');
+    }
+
+    const { width, height } = canvas;
+    const imageData = context.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const alphaIndex = (y * width + x) * 4 + 3;
+        if (pixels[alphaIndex] > 0) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+
+    if (maxX < minX || maxY < minY) {
+      throw new Error('Vui lòng ký trước khi xác nhận');
+    }
+
+    const padding = 8;
+    const cropX = Math.max(0, minX - padding);
+    const cropY = Math.max(0, minY - padding);
+    const cropWidth = Math.min(width - cropX, maxX - minX + 1 + padding * 2);
+    const cropHeight = Math.min(height - cropY, maxY - minY + 1 + padding * 2);
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = cropWidth;
+    outputCanvas.height = cropHeight;
+
+    const outputContext = outputCanvas.getContext('2d');
+    if (!outputContext) {
+      throw new Error('Không thể tạo ảnh chữ ký');
+    }
+
+    outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+    const blob = await new Promise((resolve, reject) => {
+      outputCanvas.toBlob((result) => {
+        if (result) {
+          resolve(result);
+          return;
+        }
+        reject(new Error('Không thể xuất ảnh chữ ký'));
+      }, 'image/png');
+    });
+
+    const normalizedCode = normalizeContractCode(resolvedContractCode || contractCode || 'contract');
+    const safeCode = (normalizedCode || 'contract').replace(/[^a-zA-Z0-9_-]/g, '_');
+    return new File([blob], `signature_${safeCode}.png`, { type: 'image/png' });
   };
 
   const getCanvasPoint = (event) => {
@@ -344,12 +433,21 @@ function LoanSigningPage({ onNavigate, pageState }) {
       return;
     }
 
+    if (!signatureFile) {
+      const signatureMessage = 'Không tìm thấy chữ ký. Vui lòng ký lại trước khi xác nhận OTP.';
+      setOtpError(signatureMessage);
+      showStatusAlert(signatureMessage, 'error');
+      return;
+    }
+
     try {
       setIsSigningContract(true);
-      await signContract(resolvedContractCode, otpValue);
-      const successMessage = 'Ký hợp đồng thành công';
+      await signWithSignature(resolvedContractCode, otpValue, signatureFile);
+      await refreshSignedContractPreview(resolvedContractCode);
+      const successMessage = 'Ký hợp đồng thành công, đã cập nhật bản hợp đồng đã ký';
       showStatusAlert(successMessage, 'success');
       pushBellNotification('success', successMessage);
+      setSignatureFile(null);
       closeOtpModal();
     } catch (error) {
       const rawErrorMessage = String(error?.message || '');
@@ -405,8 +503,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
       return;
     }
 
-    context.fillStyle = '#f4f5fc';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
     setSignatureError('');
   };
@@ -424,7 +521,9 @@ function LoanSigningPage({ onNavigate, pageState }) {
 
     try {
       setIsSendingOtp(true);
+      const preparedSignatureFile = await buildSignatureFileFromCanvas();
       const otpMessage = await sendOtp(resolvedContractCode);
+      setSignatureFile(preparedSignatureFile);
       saveContractCode({
         businessCode: currentBusinessCode,
         contractCode: resolvedContractCode,
@@ -463,7 +562,7 @@ function LoanSigningPage({ onNavigate, pageState }) {
 
       <header className="loan-signing__toolbar">
         <button type="button" className="loan-signing__back" onClick={handleBack}>
-          Quay lai
+          Quay lại
         </button>
 
         <div className="loan-signing__actions">
@@ -599,6 +698,4 @@ function LoanSigningPage({ onNavigate, pageState }) {
 }
 
 export default LoanSigningPage;
-
-
 

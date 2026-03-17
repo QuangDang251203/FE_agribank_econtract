@@ -19,6 +19,10 @@ const API_CONFIG = {
       GENERATE_AND_DOWNLOAD: '/api/contract/generate-and-download',
       SEND_OTP: '/api/contract/send-otp',
       SIGN_CONTRACT: '/api/contract/signContract',
+      SIGN_WITH_SIGNATURE: '/api/contract/sign-with-signature',
+      GET_FILE_BY_CONTRACT_CODE: '/api/contract/getContractFileByContractCode',
+      GET_BY_CONTRACT_CODE: '/api/contract/getContractByContractCode',
+      GET_BY_BUSINESS_CODE: '/api/contract/getContractByBusinessCode',
     },
     BANK_ACCOUNT: {
       GET_BY_BUSINESS_CODE: '/api/bank-accounts/getBankAccountByBusinessCode',
@@ -35,4 +39,3 @@ const API_CONFIG = {
 };
 
 export default API_CONFIG;
-

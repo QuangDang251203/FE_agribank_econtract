@@ -10,6 +10,8 @@ import BulkTransferPage from '../../pages/layout/BulkTransferPage';
 import SecuredLoanPage from '../../pages/layout/SecuredLoanPage';
 import CreateSecuredLoanPage from '../../pages/layout/CreateSecuredLoanPage';
 import LoanSigningPage from '../../pages/layout/LoanSigningPage';
+import LoanHistoryPage from '../../pages/layout/LoanHistoryPage';
+import LoanContractDetailPage from '../../pages/layout/LoanContractDetailPage';
 import BillPaymentPage from '../../pages/layout/BillPaymentPage';
 import TaxPaymentPage from '../../pages/layout/TaxPaymentPage';
 import OnlineAccountPage from '../../pages/layout/OnlineAccountPage';
@@ -32,7 +34,8 @@ const pageComponentMap = {
   loan: SecuredLoanPage,
   'loan-create': CreateSecuredLoanPage,
   'loan-signing': LoanSigningPage,
-  'loan-history': SecuredLoanPage,
+  'loan-history': LoanHistoryPage,
+  'loan-history-detail': LoanContractDetailPage,
   bill: BillPaymentPage,
   'bill-electricity': BillPaymentPage,
   'bill-water': BillPaymentPage,
@@ -75,4 +78,3 @@ function AppLayout() {
 }
 
 export default AppLayout;
-

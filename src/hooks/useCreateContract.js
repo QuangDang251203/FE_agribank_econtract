@@ -9,8 +9,12 @@ import {
   createContractApi,
   generateAndDownloadContractApi,
   getBankAccountsByBusinessCodeApi,
+  getContractByContractCodeApi,
+  getContractFileByContractCodeApi,
+  getContractsByBusinessCodeApi,
   moneyToWordsApi,
   signContractApi,
+  signContractWithSignatureApi,
   sendOtpApi,
 } from '../services/api/contractApi';
 
@@ -84,6 +88,15 @@ export function useCreateContract() {
     return response?.data || [];
   }, []);
 
+  const fetchContractsByBusinessCode = useCallback(async (businessCode) => {
+    const response = await getContractsByBusinessCodeApi(businessCode);
+    if (response?.code !== '00') {
+      throw new Error(response?.message || 'Không lấy được lịch sử khoản vay');
+    }
+
+    return response?.data || [];
+  }, []);
+
   const convertMoneyToWords = useCallback(async (amount) => {
     const response = await moneyToWordsApi(amount);
     return String(response || '').trim();
@@ -105,14 +118,29 @@ export function useCreateContract() {
     return signContractApi(contractCode, otpCode);
   }, []);
 
+  const signWithSignature = useCallback(async (contractCode, otpCode, signatureFile) => {
+    return signContractWithSignatureApi(contractCode, otpCode, signatureFile);
+  }, []);
+
+  const fetchContractFileByCode = useCallback(async (contractCode) => {
+    return getContractFileByContractCodeApi(contractCode);
+  }, []);
+
+  const fetchContractByCode = useCallback(async (contractCode) => {
+    return getContractByContractCodeApi(contractCode);
+  }, []);
+
   return {
     createContract,
     fetchBankAccounts,
+    fetchContractsByBusinessCode,
+    fetchContractByCode,
+    fetchContractFileByCode,
     convertMoneyToWords,
     generateAndDownloadContract,
     createAndGenerateContract,
     sendOtp,
     signContract,
+    signWithSignature,
   };
 }
-
