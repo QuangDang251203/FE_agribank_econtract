@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useCreateContract } from '../../hooks/useCreateContract';
-import '../../styles/loanHistoryPage.css';
+import '../../styles/adminContractsPage.css';
 
 const STATUS_META = {
   1: { label: 'Chờ ký', tone: 'pending' },
@@ -9,7 +8,7 @@ const STATUS_META = {
   99: { label: 'Đã hủy', tone: 'danger' },
 };
 
-function formatDateTime(value) {
+function formatDate(value) {
   if (!value) {
     return 'N/A';
   }
@@ -26,12 +25,12 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-function formatCurrencyVnd(value) {
+function formatCurrency(value) {
   const amount = Number(value) || 0;
   return amount.toLocaleString('vi-VN');
 }
 
-function formatInterestRate(value) {
+function formatRate(value) {
   const interestValue = Number(value);
   if (!Number.isFinite(interestValue)) {
     return 'N/A';
@@ -43,66 +42,76 @@ function formatInterestRate(value) {
 
 function EyeIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden="true" className="loan-history-page__eye-icon">
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="admin-contracts-page__eye-icon">
       <path d="M1.8 8c1.7-2.7 3.8-4 6.2-4s4.5 1.3 6.2 4c-1.7 2.7-3.8 4-6.2 4S3.5 10.7 1.8 8Z" fill="none" stroke="currentColor" strokeWidth="1.3" />
       <circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
     </svg>
   );
 }
 
-function LoanHistoryPage({ onNavigate }) {
-  const { user } = useAuth();
-  const { fetchContractsByBusinessCode } = useCreateContract();
+function AdminContractsPage({ onNavigate }) {
+  const { fetchAllContracts } = useCreateContract();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     createdAt: '',
+    borrower: '',
     unit: '',
+    representative: '',
     loanAmount: '',
     loanTerm: '',
     status: '',
   });
 
   useEffect(() => {
-    const businessCode = user?.businessCode || localStorage.getItem('businessCode') || '';
-
-    if (!businessCode) {
-      setError('Không tìm thấy mã doanh nghiệp để tải lịch sử khoản vay');
-      return;
-    }
-
     let mounted = true;
 
-    const loadLoanHistory = async () => {
+    const loadAllContracts = async () => {
       try {
         setLoading(true);
         setError('');
 
-        const contracts = await fetchContractsByBusinessCode(businessCode);
+        const contracts = await fetchAllContracts();
         if (!mounted) {
           return;
         }
 
         const normalizedRows = contracts.map((item, index) => {
-          const status = Number(item?.status);
-          const statusMeta = STATUS_META[status] || { label: `Trạng thái ${status}`, tone: 'draft' };
+          const contract = item?.contractInfo || item || {};
+          const cccdInfo = item?.cccdInfo || contract?.cccdInfo || {};
+          const statusCode = Number(contract?.status);
+          const statusMeta = STATUS_META[statusCode] || { label: `Trạng thái ${statusCode}`, tone: 'draft' };
 
           return {
-            id: `${item?.contractCode || 'contract'}-${index}`,
+            id: `${contract?.contractCode || 'contract'}-${index}`,
             stt: index + 1,
-            contractCode: item?.contractCode || '',
-            rawContract: item,
-            createdAtRaw: item?.createdAt || '',
-            createdAtDisplay: formatDateTime(item?.createdAt),
-            unitBranch: item?.bankAccount?.branchName || 'N/A',
-            unitAccountNumber: item?.bankAccount?.bankAccountNumber || 'N/A',
-            loanAmountRaw: Number(item?.loanAmount) || 0,
-            loanAmountDisplay: formatCurrencyVnd(item?.loanAmount),
-            loanTermRaw: Number(item?.loanTerm) || 0,
-            loanTermDisplay: `${Number(item?.loanTerm) || 0} tháng`,
-            interestRateDisplay: formatInterestRate(item?.interestRate),
-            statusRaw: status,
+            contractCode: contract?.contractCode || '',
+            rawContract: {
+              ...contract,
+              cccdInfo,
+            },
+            createdAtRaw: contract?.createdAt || '',
+            createdAtDisplay: formatDate(contract?.createdAt),
+            borrowerName: contract?.client?.businessName || 'N/A',
+            unitBranch: contract?.bankAccount?.branchName || 'N/A',
+            unitAccountNumber: contract?.bankAccount?.bankAccountNumber || 'N/A',
+            representativeName:
+              cccdInfo?.representative ||
+              contract?.representative ||
+              contract?.client?.representativeName ||
+              'N/A',
+            representativeIdentity:
+              cccdInfo?.cccdNumber ||
+              contract?.representativeIdentity ||
+              contract?.client?.idNumber ||
+              'N/A',
+            loanAmountRaw: Number(contract?.loanAmount) || 0,
+            loanAmountDisplay: formatCurrency(contract?.loanAmount),
+            loanTermRaw: Number(contract?.loanTerm) || 0,
+            loanTermDisplay: `${Number(contract?.loanTerm) || 0} tháng`,
+            interestRateDisplay: formatRate(contract?.interestRate),
+            statusRaw: statusCode,
             statusLabel: statusMeta.label,
             statusTone: statusMeta.tone,
           };
@@ -112,7 +121,7 @@ function LoanHistoryPage({ onNavigate }) {
       } catch (loadError) {
         if (mounted) {
           setRows([]);
-          setError(loadError.message || 'Không thể tải danh sách lịch sử khoản vay');
+          setError(loadError.message || 'Không thể tải danh sách hợp đồng');
         }
       } finally {
         if (mounted) {
@@ -121,27 +130,32 @@ function LoanHistoryPage({ onNavigate }) {
       }
     };
 
-    loadLoanHistory();
+    loadAllContracts();
 
     return () => {
       mounted = false;
     };
-  }, [user?.businessCode, fetchContractsByBusinessCode]);
+  }, [fetchAllContracts]);
 
   const filteredRows = useMemo(() => {
     const createdFilter = filters.createdAt.trim().toLowerCase();
+    const borrowerFilter = filters.borrower.trim().toLowerCase();
+    const representativeFilter = filters.representative.trim().toLowerCase();
     const unitFilter = filters.unit.trim().toLowerCase();
     const amountFilter = filters.loanAmount.replace(/[^\d]/g, '');
 
     return rows.filter((row) => {
       const createdMatches = !createdFilter || row.createdAtDisplay.toLowerCase().includes(createdFilter);
+      const borrowerMatches = !borrowerFilter || row.borrowerName.toLowerCase().includes(borrowerFilter);
+      const representativeText = `${row.representativeName} ${row.representativeIdentity}`.toLowerCase();
+      const representativeMatches = !representativeFilter || representativeText.includes(representativeFilter);
       const unitText = `${row.unitBranch} ${row.unitAccountNumber}`.toLowerCase();
       const unitMatches = !unitFilter || unitText.includes(unitFilter);
       const amountMatches = !amountFilter || String(row.loanAmountRaw).includes(amountFilter);
       const termMatches = !filters.loanTerm || String(row.loanTermRaw) === filters.loanTerm;
       const statusMatches = !filters.status || String(row.statusRaw) === filters.status;
 
-      return createdMatches && unitMatches && amountMatches && termMatches && statusMatches;
+      return createdMatches && borrowerMatches && representativeMatches && unitMatches && amountMatches && termMatches && statusMatches;
     });
   }, [rows, filters]);
 
@@ -179,34 +193,36 @@ function LoanHistoryPage({ onNavigate }) {
   };
 
   return (
-    <main className="loan-history-page">
-      <section className="loan-history-page__panel">
-        <div className="loan-history-page__titlebar">
-          <h1>Lịch sử khoản vay có thế chấp</h1>
+    <main className="admin-contracts-page">
+      <section className="admin-contracts-page__panel">
+        <div className="admin-contracts-page__titlebar">
+          <h1>Hợp đồng vay có thế chấp</h1>
         </div>
 
-        <div className="loan-history-page__workspace">
-          <section className="loan-history-page__card">
-            <header className="loan-history-page__card-header">
+        <div className="admin-contracts-page__workspace">
+          <section className="admin-contracts-page__card">
+            <header className="admin-contracts-page__card-header">
               <h2>Danh sách hợp đồng KHDN vay có thế chấp</h2>
             </header>
 
-            {error ? <p className="loan-history-page__error">{error}</p> : null}
+            {error ? <p className="admin-contracts-page__error">{error}</p> : null}
 
-            <div className="loan-history-page__table-wrap">
-              <table className="loan-history-page__table" aria-label="Bảng lịch sử khoản vay">
+            <div className="admin-contracts-page__table-wrap">
+              <table className="admin-contracts-page__table" aria-label="Bảng danh sách hợp đồng admin">
                 <thead>
                   <tr>
                     <th>STT</th>
                     <th>Thời gian tạo</th>
+                    <th>Bên vay</th>
                     <th>Đơn vị</th>
+                    <th>Người đại diện</th>
                     <th>Khoản vay (VND)</th>
                     <th>Thời hạn vay</th>
                     <th>Lãi suất</th>
                     <th>Trạng thái</th>
                     <th>Hành động</th>
                   </tr>
-                  <tr className="loan-history-page__filters-row">
+                  <tr className="admin-contracts-page__filters-row">
                     <th />
                     <th>
                       <input
@@ -214,7 +230,16 @@ function LoanHistoryPage({ onNavigate }) {
                         value={filters.createdAt}
                         onChange={(event) => handleFilterChange('createdAt', event.target.value)}
                         placeholder="Chọn thời gian"
-                        className="loan-history-page__filter-input"
+                        className="admin-contracts-page__filter-input"
+                      />
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        value={filters.borrower}
+                        onChange={(event) => handleFilterChange('borrower', event.target.value)}
+                        placeholder="Tìm bên vay"
+                        className="admin-contracts-page__filter-input"
                       />
                     </th>
                     <th>
@@ -223,7 +248,16 @@ function LoanHistoryPage({ onNavigate }) {
                         value={filters.unit}
                         onChange={(event) => handleFilterChange('unit', event.target.value)}
                         placeholder="Tìm đơn vị / số TK"
-                        className="loan-history-page__filter-input"
+                        className="admin-contracts-page__filter-input"
+                      />
+                    </th>
+                    <th>
+                      <input
+                        type="text"
+                        value={filters.representative}
+                        onChange={(event) => handleFilterChange('representative', event.target.value)}
+                        placeholder="Tìm người đại diện"
+                        className="admin-contracts-page__filter-input"
                       />
                     </th>
                     <th>
@@ -232,14 +266,14 @@ function LoanHistoryPage({ onNavigate }) {
                         value={filters.loanAmount}
                         onChange={(event) => handleFilterChange('loanAmount', event.target.value)}
                         placeholder="Tìm khoản vay"
-                        className="loan-history-page__filter-input"
+                        className="admin-contracts-page__filter-input"
                       />
                     </th>
                     <th>
                       <select
                         value={filters.loanTerm}
                         onChange={(event) => handleFilterChange('loanTerm', event.target.value)}
-                        className="loan-history-page__filter-select"
+                        className="admin-contracts-page__filter-select"
                       >
                         <option value="">Tất cả</option>
                         {termOptions.map((term) => (
@@ -252,7 +286,7 @@ function LoanHistoryPage({ onNavigate }) {
                       <select
                         value={filters.status}
                         onChange={(event) => handleFilterChange('status', event.target.value)}
-                        className="loan-history-page__filter-select"
+                        className="admin-contracts-page__filter-select"
                       >
                         <option value="">Tất cả</option>
                         {statusOptions.map((statusCode) => (
@@ -268,13 +302,13 @@ function LoanHistoryPage({ onNavigate }) {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="loan-history-page__empty">Đang tải dữ liệu...</td>
+                      <td colSpan={10} className="admin-contracts-page__empty">Đang tải dữ liệu...</td>
                     </tr>
                   ) : null}
 
                   {!loading && filteredRows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="loan-history-page__empty">Không có dữ liệu phù hợp</td>
+                      <td colSpan={10} className="admin-contracts-page__empty">Không có dữ liệu phù hợp</td>
                     </tr>
                   ) : null}
 
@@ -283,29 +317,34 @@ function LoanHistoryPage({ onNavigate }) {
                         <tr key={row.id}>
                           <td>{row.stt}</td>
                           <td>{row.createdAtDisplay}</td>
+                          <td>{row.borrowerName}</td>
                           <td>
-                            <div className="loan-history-page__unit-branch">{row.unitBranch}</div>
-                            <div className="loan-history-page__unit-account">{row.unitAccountNumber}</div>
+                            <div className="admin-contracts-page__unit-branch">{row.unitBranch}</div>
+                            <div className="admin-contracts-page__unit-account">{row.unitAccountNumber}</div>
+                          </td>
+                          <td>
+                            <div className="admin-contracts-page__unit-branch">{row.representativeName}</div>
+                            <div className="admin-contracts-page__unit-account">{row.representativeIdentity}</div>
                           </td>
                           <td>{row.loanAmountDisplay}</td>
                           <td>{row.loanTermDisplay}</td>
                           <td>{row.interestRateDisplay}</td>
                           <td>
-                            <span className={`loan-history-page__status loan-history-page__status--${row.statusTone}`}>
+                            <span className={`admin-contracts-page__status admin-contracts-page__status--${row.statusTone}`}>
                               {row.statusLabel}
                             </span>
                           </td>
                           <td>
                             <button
                               type="button"
-                              className="loan-history-page__view-btn"
+                              className="admin-contracts-page__view-btn"
                               title={`Mã hợp đồng ${row.contractCode}`}
                               aria-label={`Xem chi tiết hợp đồng ${row.contractCode}`}
                               onClick={() => handleOpenDetail(row)}
                             >
-                               <EyeIcon />
-                             </button>
-                           </td>
+                              <EyeIcon />
+                            </button>
+                          </td>
                         </tr>
                       ))
                     : null}
@@ -319,5 +358,5 @@ function LoanHistoryPage({ onNavigate }) {
   );
 }
 
-export default LoanHistoryPage;
+export default AdminContractsPage;
 

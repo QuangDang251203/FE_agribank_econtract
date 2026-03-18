@@ -12,6 +12,7 @@ import CreateSecuredLoanPage from '../../pages/layout/CreateSecuredLoanPage';
 import LoanSigningPage from '../../pages/layout/LoanSigningPage';
 import LoanHistoryPage from '../../pages/layout/LoanHistoryPage';
 import LoanContractDetailPage from '../../pages/layout/LoanContractDetailPage';
+import AdminContractsPage from '../../pages/layout/AdminContractsPage';
 import BillPaymentPage from '../../pages/layout/BillPaymentPage';
 import TaxPaymentPage from '../../pages/layout/TaxPaymentPage';
 import OnlineAccountPage from '../../pages/layout/OnlineAccountPage';
@@ -36,6 +37,7 @@ const pageComponentMap = {
   'loan-signing': LoanSigningPage,
   'loan-history': LoanHistoryPage,
   'loan-history-detail': LoanContractDetailPage,
+  'admin-contracts': AdminContractsPage,
   bill: BillPaymentPage,
   'bill-electricity': BillPaymentPage,
   'bill-water': BillPaymentPage,
@@ -48,8 +50,8 @@ const pageComponentMap = {
   'online-manage': OnlineAccountPage,
 };
 
-function AppLayout() {
-  const [selectedKey, setSelectedKey] = useState(DEFAULT_SIDEBAR_KEY);
+function AppLayout({ initialPageKey = DEFAULT_SIDEBAR_KEY }) {
+  const [selectedKey, setSelectedKey] = useState(initialPageKey);
   const [pageState, setPageState] = useState({});
   const CurrentPage = useMemo(
     () => pageComponentMap[selectedKey] || HomePage,

@@ -158,6 +158,50 @@ export const getContractsByBusinessCodeApi = async (businessCode) => {
 };
 
 /**
+ * Get all contracts for admin listing.
+ * Backend returns ResponseList<Contract>.
+ */
+export const getAllContractsApi = async () => {
+    const primaryPath = API_CONFIG.ENDPOINTS.CONTRACT.GET_ALL_CONTRACTS;
+    const secondaryPath = primaryPath.replace('/api/contract/', '/api/contracts/');
+    const candidateUrls = [
+        `${API_CONFIG.BASE_URL}${primaryPath}`,
+        `${API_CONFIG.BASE_URL}${secondaryPath}`,
+    ];
+
+    try {
+        let lastError = null;
+
+        for (const url of candidateUrls) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: API_CONFIG.HEADERS,
+            });
+
+            const data = await parseJsonSafe(response);
+            if (response.ok) {
+                return data;
+            }
+
+            lastError = new Error(
+                data?.message || data?.error || `Failed to fetch all contracts with status ${response.status}`
+            );
+
+            if (response.status === 404) {
+                continue;
+            }
+
+            throw lastError;
+        }
+
+        throw lastError || new Error('Get all contracts endpoint not found');
+    } catch (error) {
+        console.error('❌ Get all contracts API error:', error);
+        throw error;
+    }
+};
+
+/**
  * Convert loan amount to Vietnamese words.
  */
 export const moneyToWordsApi = async (amount) => {
@@ -516,6 +560,88 @@ export const getContractFileByContractCodeApi = async (contractCode) => {
         throw lastError || new Error('Get contract file endpoint not found');
     } catch (error) {
         console.error('❌ Get contract file API error:', error);
+        throw error;
+    }
+};
+
+const resolveFileNameFromPath = (filePath, fallbackName) => {
+    const normalizedPath = String(filePath || '').replace(/\\/g, '/');
+    const pathParts = normalizedPath.split('/').filter(Boolean);
+    return pathParts[pathParts.length - 1] || fallbackName;
+};
+
+const normalizeContractDetailPayload = (payload) => {
+    if (!payload || typeof payload !== 'object') {
+        return {};
+    }
+
+    const contractInfo = payload.contractInfo || payload.contract || payload;
+    const fileInfo = payload.fileInfo || null;
+    const fileName =
+        payload.fileName ||
+        resolveFileNameFromPath(fileInfo?.filePath, contractInfo?.contractCode ? `${contractInfo.contractCode}.pdf` : 'contract.pdf');
+
+    return {
+        ...payload,
+        contractInfo,
+        fileInfo,
+        fileName,
+        mimeType: payload.mimeType || null,
+        fileContentBase64: payload.fileContentBase64 || '',
+    };
+};
+
+/**
+ * Get rich contract detail by contract code.
+ * Supports the new endpoint and falls back to the previous endpoint.
+ */
+export const getContractDetailByContractCodeApi = async (contractCode) => {
+    if (!contractCode) {
+        throw new Error('Contract code is required');
+    }
+
+    const encodedCode = encodeURIComponent(contractCode);
+    const detailPath = API_CONFIG.ENDPOINTS.CONTRACT.GET_DETAIL_BY_CONTRACT_CODE;
+    const legacyPath = API_CONFIG.ENDPOINTS.CONTRACT.GET_BY_CONTRACT_CODE;
+    const candidateUrls = [
+        `${API_CONFIG.BASE_URL}${detailPath}/${encodedCode}`,
+        `${API_CONFIG.BASE_URL}${detailPath.replace('/api/contract/', '/api/contracts/')}/${encodedCode}`,
+        `${API_CONFIG.BASE_URL}${legacyPath}/${encodedCode}`,
+        `${API_CONFIG.BASE_URL}${legacyPath.replace('/api/contract/', '/api/contracts/')}/${encodedCode}`,
+    ];
+
+    try {
+        let lastError = null;
+
+        for (const url of candidateUrls) {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: API_CONFIG.HEADERS,
+            });
+
+            const data = await parseJsonSafe(response);
+            if (response.ok) {
+                const resolvedPayload = data?.data || data?.result || data;
+                return {
+                    ...data,
+                    data: normalizeContractDetailPayload(resolvedPayload),
+                };
+            }
+
+            lastError = new Error(
+                data?.message || data?.error || `Failed to fetch contract detail with status ${response.status}`
+            );
+
+            if (response.status === 404) {
+                continue;
+            }
+
+            throw lastError;
+        }
+
+        throw lastError || new Error('Get contract detail endpoint not found');
+    } catch (error) {
+        console.error('❌ Get contract detail API error:', error);
         throw error;
     }
 };

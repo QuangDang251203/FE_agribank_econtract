@@ -21,8 +21,10 @@ const API_CONFIG = {
       SIGN_CONTRACT: '/api/contract/signContract',
       SIGN_WITH_SIGNATURE: '/api/contract/sign-with-signature',
       GET_FILE_BY_CONTRACT_CODE: '/api/contract/getContractFileByContractCode',
+      GET_DETAIL_BY_CONTRACT_CODE: '/api/contract/getContractDetailByContractCode',
       GET_BY_CONTRACT_CODE: '/api/contract/getContractByContractCode',
       GET_BY_BUSINESS_CODE: '/api/contract/getContractByBusinessCode',
+      GET_ALL_CONTRACTS: '/api/contract/getAllContracts',
     },
     BANK_ACCOUNT: {
       GET_BY_BUSINESS_CODE: '/api/bank-accounts/getBankAccountByBusinessCode',

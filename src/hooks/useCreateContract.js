@@ -8,7 +8,9 @@ import {
   createAndGenerateContractApi,
   createContractApi,
   generateAndDownloadContractApi,
+  getAllContractsApi,
   getBankAccountsByBusinessCodeApi,
+  getContractDetailByContractCodeApi,
   getContractByContractCodeApi,
   getContractFileByContractCodeApi,
   getContractsByBusinessCodeApi,
@@ -97,6 +99,15 @@ export function useCreateContract() {
     return response?.data || [];
   }, []);
 
+  const fetchAllContracts = useCallback(async () => {
+    const response = await getAllContractsApi();
+    if (response?.code !== '00') {
+      throw new Error(response?.message || 'Không lấy được danh sách hợp đồng');
+    }
+
+    return response?.data || [];
+  }, []);
+
   const convertMoneyToWords = useCallback(async (amount) => {
     const response = await moneyToWordsApi(amount);
     return String(response || '').trim();
@@ -130,11 +141,22 @@ export function useCreateContract() {
     return getContractByContractCodeApi(contractCode);
   }, []);
 
+  const fetchContractDetailByCode = useCallback(async (contractCode) => {
+    const response = await getContractDetailByContractCodeApi(contractCode);
+    if (response?.code && response.code !== '00') {
+      throw new Error(response?.message || 'Khong lay duoc chi tiet hop dong');
+    }
+
+    return response?.data || {};
+  }, []);
+
   return {
     createContract,
     fetchBankAccounts,
+    fetchAllContracts,
     fetchContractsByBusinessCode,
     fetchContractByCode,
+    fetchContractDetailByCode,
     fetchContractFileByCode,
     convertMoneyToWords,
     generateAndDownloadContract,

@@ -4,7 +4,7 @@ import LoginPage from './components/login/LoginPage';
 import LoanSigningPage from './pages/layout/LoanSigningPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-const validRoutes = ['/login', '/layout', '/signing'];
+const validRoutes = ['/login', '/layout', '/signing', '/admin/contracts'];
 
 function getCurrentRoute() {
   const { pathname } = window.location;
@@ -43,13 +43,17 @@ function AppContent() {
   }, []);
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated && route === '/layout') {
+  if (!isAuthenticated && (route === '/layout' || route === '/admin/contracts')) {
     window.history.replaceState({}, '', '/login');
     return <LoginPage />;
   }
 
   if (route === '/layout' && isAuthenticated) {
     return <AppLayout />;
+  }
+
+  if (route === '/admin/contracts' && isAuthenticated) {
+    return <AppLayout initialPageKey="admin-contracts" />;
   }
 
   if (route === '/signing') {
