@@ -1,0 +1,292 @@
+.loan-signing {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  background: #f0f0f0;
+  overflow: hidden;
+}
+
+.loan-signing__status-alert {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(360px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #f5f6f7;
+  color: #2f3545;
+  animation: loan-signing-slide-in 180ms ease;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.14);
+}
+
+.loan-signing__status-alert--success {
+  border-color: #27a857;
+  background: #f5f6f7;
+}
+
+.loan-signing__status-alert--error {
+  border-color: #d92d20;
+  background: #fff4f4;
+}
+
+.loan-signing__status-alert-icon {
+  width: 28px;
+  height: 28px;
+  color: #27a857;
+  flex: 0 0 auto;
+}
+
+.loan-signing__status-alert--error .loan-signing__status-alert-icon {
+  color: #d92d20;
+}
+
+.loan-signing__status-alert-message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.loan-signing__status-alert-close {
+  border: none;
+  background: transparent;
+  color: #4a4f5d;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.loan-signing__toolbar {
+  height: 56px;
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.loan-signing__back {
+  border: none;
+  background: transparent;
+  color: #4d4d4d;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.loan-signing__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loan-signing__btn {
+  min-height: 32px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.loan-signing__btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.loan-signing__btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.loan-signing__btn--success {
+  background: #2b9a3e;
+  color: #ffffff;
+}
+
+.loan-signing__btn--danger {
+  background: #AE1C3F;
+  color: #ffffff;
+}
+
+.loan-signing__btn--danger-soft {
+  background: #AE1C3F;
+  color: #ffffff;
+}
+
+.loan-signing__btn--ghost {
+  background: #ffffff;
+  border-color: #d8d8d8;
+  color: #555555;
+}
+
+.loan-signing__body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.loan-signing__sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e4e4e4;
+  padding: 12px 10px;
+  overflow: auto;
+}
+
+.loan-signing__sidebar h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a4a4a;
+}
+
+.loan-signing__sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loan-signing__sidebar li {
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4f4f4f;
+  background: #f8f8f8;
+}
+
+.loan-signing__sidebar li.is-active {
+  background: #f1e2e7;
+  color: #AE1C3F;
+  font-weight: 600;
+}
+
+.loan-signing__viewer {
+  padding: 20px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.loan-signing__iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: none;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.loan-signing__empty {
+  min-height: 280px;
+  border: 1px dashed #c7c7c7;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777777;
+  font-size: 14px;
+}
+
+.loan-signing__signature-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(25, 28, 37, 0.4);
+  z-index: 1000;
+}
+
+.loan-signing__signature-modal {
+  width: min(600px, calc(100vw - 32px));
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #dbdce2;
+  box-shadow: 0 16px 40px rgba(15, 20, 35, 0.28);
+  overflow: hidden;
+}
+
+.loan-signing__signature-header {
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e3e5ed;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.loan-signing__signature-header h3 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  color: #2f3545;
+}
+
+.loan-signing__signature-close {
+  border: none;
+  background: transparent;
+  color: #8b8f9c;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.loan-signing__signature-body {
+  padding: 26px 20px 10px;
+}
+
+
+.loan-signing__signature-canvas {
+  width: 100%;
+  height: 220px;
+  border: 1px solid #dee1ed;
+  border-radius: 3px;
+  background: #f4f5fc;
+  display: block;
+  cursor: crosshair;
+}
+
+.loan-signing__signature-error {
+  margin: 10px 0 0;
+  color: #c0143f;
+  font-size: 13px;
+}
+
+.loan-signing__signature-actions {
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+@keyframes loan-signing-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+

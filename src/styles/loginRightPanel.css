@@ -1,0 +1,269 @@
+.login-right {
+  width: 640px;
+  min-height: 1080px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 76px;
+}
+
+.login-right__content {
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.login-right__logo {
+  width: min(100%, 270px);
+  height: auto;
+  object-fit: contain;
+}
+
+.login-right__heading {
+  display: grid;
+  gap: 4px;
+}
+
+.login-right__title {
+  margin: 0;
+  color: #AE1C3F;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.login-right__subtitle {
+  margin: 0;
+  color: #4f4f4f;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.login-right__form {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 360px);
+  align-self: flex-start;
+}
+
+.login-right__error-message {
+  padding: 12px 14px;
+  border-radius: 4px;
+  background-color: #ffe6e6;
+  border: 1px solid #ffcccc;
+  color: #c00;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.login-right__field {
+  display: grid;
+  gap: 8px;
+}
+
+.login-right__label {
+  color: #4a4a4a;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.login-right__required {
+  color: #d02a4f;
+}
+
+.login-right__input,
+.login-right__password-field {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #E6E8EE;
+  border-radius: 4px;
+  background: #F7F8FA;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.login-right__input {
+  height: 36px;
+  padding: 0 12px;
+  outline: none;
+  color: #404040;
+  font-size: 13px;
+}
+
+.login-right__input::placeholder {
+  color: #ababab;
+}
+
+.login-right__input:focus,
+.login-right__password-field:focus-within {
+  border-color: #c11f48;
+  box-shadow: 0 0 0 2px rgba(193, 31, 72, 0.12);
+  background: #f8f8f8;
+}
+
+.login-right__password-field {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+}
+
+.login-right__input--password {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding-right: 8px;
+}
+
+.login-right__password-toggle {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: #707070;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.login-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.login-right__captcha-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 142px;
+  gap: 12px;
+  align-items: end;
+}
+
+.login-right__captcha-column {
+  display: grid;
+  gap: 8px;
+}
+
+.login-right__input--captcha {
+  padding-inline: 10px;
+}
+
+.login-right__captcha-image {
+  position: relative;
+  height: 36px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #9ec5cb;
+  background:
+    linear-gradient(180deg, rgba(186, 228, 233, 0.95), rgba(159, 217, 223, 0.95)),
+    repeating-linear-gradient(90deg, rgba(63, 93, 140, 0.16) 0 2px, transparent 2px 7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 8px;
+}
+
+.login-right__captcha-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, transparent 0 27%, rgba(69, 93, 143, 0.25) 28% 30%, transparent 31% 100%),
+    linear-gradient(68deg, transparent 0 59%, rgba(69, 93, 143, 0.2) 60% 62%, transparent 63% 100%);
+}
+
+.login-right__captcha-image span {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  color: #27448d;
+  font-family: inherit;
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.login-right__captcha-image span:nth-child(1) {
+  transform: rotate(-14deg) translateY(1px);
+}
+
+.login-right__captcha-image span:nth-child(2) {
+  transform: rotate(9deg) translateY(-1px);
+}
+
+.login-right__captcha-image span:nth-child(3) {
+  transform: rotate(-8deg) translateY(1px);
+}
+
+.login-right__captcha-image span:nth-child(4) {
+  transform: rotate(10deg) translateY(-2px);
+}
+
+.login-right__captcha-image span:nth-child(5) {
+  transform: rotate(-11deg);
+}
+
+.login-right__captcha-image span:nth-child(6) {
+  transform: rotate(13deg) translateY(1px);
+}
+
+.login-right__submit {
+  height: 45px;
+  border: 0;
+  border-radius: 4px;
+  background: #AE1C3F;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.login-right__submit:hover:not(:disabled) {
+  filter: brightness(1.03);
+}
+
+.login-right__submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.login-right__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1919px) {
+  .login-right {
+    width: 100%;
+    min-height: 100vh;
+    padding-inline: 28px;
+  }
+
+  .login-right__content {
+    width: min(100%, 420px);
+  }
+}
+
+@media (max-width: 980px) {
+  .login-right {
+    min-height: auto;
+    padding: 24px 18px 30px;
+  }
+
+  .login-right__content {
+    width: min(100%, 420px);
+  }
+}
+
+@media (max-width: 420px) {
+  .login-right__captcha-row {
+    grid-template-columns: 1fr;
+  }
+}
+

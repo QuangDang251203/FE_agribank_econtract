@@ -1,0 +1,23 @@
+.home-layout {
+  min-height: 100vh;
+  background: #e9e9e9;
+  color: #2f2f2f;
+}
+
+.home-layout__body {
+  display: flex;
+  min-height: calc(100vh - 48px);
+}
+
+@media (max-width: 1024px) {
+  .home-layout__body {
+    min-height: calc(100vh - 56px);
+  }
+}
+
+@media (max-width: 900px) {
+  .home-layout__body {
+    flex-direction: column;
+  }
+}
+

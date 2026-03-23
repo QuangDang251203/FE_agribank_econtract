@@ -1,0 +1,271 @@
+.loan-contract-detail {
+  flex: 1;
+  padding: 5px;
+  background: #f4f5f7;
+  min-height: calc(100vh - 68px);
+  overflow: auto;
+  font-family: 'Inter', sans-serif;
+}
+
+.loan-contract-detail__panel {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.loan-contract-detail__titlebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.loan-contract-detail__titlebar h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #232323;
+}
+
+.loan-contract-detail__back {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #d7d9dd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #363a41;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.loan-contract-detail__workspace {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.loan-contract-detail__card {
+  background: #ffffff;
+  border: 1px solid #eceff3;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(15, 24, 45, 0.05);
+}
+
+.loan-contract-detail__card--contract {
+  grid-column: span 2;
+}
+
+.loan-contract-detail__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eef1f6;
+  padding: 16px 20px;
+}
+
+.loan-contract-detail__header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loan-contract-detail__header-left h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #232323;
+}
+
+.loan-contract-detail__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.loan-contract-detail__status--pending {
+  color: #9f7f00;
+  background: #fff7d6;
+}
+
+.loan-contract-detail__status--success {
+  color: #0f7f3f;
+  background: #e6f6ec;
+}
+
+.loan-contract-detail__status--danger {
+  color: #b42318;
+  background: #feecec;
+}
+
+.loan-contract-detail__status--draft {
+  color: #334155;
+  background: #ebeff5;
+}
+
+.loan-contract-detail__action-btn {
+  border: 1px solid #d8dde6;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #ffffff;
+  color: #2b2f37;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.loan-contract-detail__row-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 0;
+}
+
+.loan-contract-detail__section-title {
+  margin: 0;
+  padding: 18px 20px 10px;
+  font-size: 20px;
+  color: #252a31;
+}
+
+.loan-contract-detail__row-title .loan-contract-detail__section-title {
+  padding: 0;
+}
+
+.loan-contract-detail__created-at {
+  color: #495464;
+  font-size: 16px;
+}
+
+.loan-contract-detail__grid {
+  display: grid;
+  gap: 12px 16px;
+  padding: 0 20px;
+}
+
+.loan-contract-detail__grid--two {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.loan-contract-detail__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loan-contract-detail__label {
+  font-size: 16px;
+  color: #303741;
+  font-weight: 600;
+}
+
+.loan-contract-detail__value {
+  min-height: 42px;
+  border-radius: 8px;
+  background: #f3f5f8;
+  color: #313a48;
+  font-size: 14px;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-contract-detail__attachments {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+  flex-wrap: wrap;
+}
+
+.loan-contract-detail__file-card {
+  border: 1px solid #e2e7ef;
+  background: #f7f9fc;
+  border-radius: 12px;
+  width: 170px;
+  min-height: 128px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.loan-contract-detail__file-card:hover {
+  border-color: #cc3546;
+  background: #fff8f8;
+}
+
+.loan-contract-detail__file-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loan-contract-detail__file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ffe3e5;
+  color: #c01a2c;
+  font-weight: 700;
+}
+
+.loan-contract-detail__file-name {
+  width: 100%;
+  text-align: center;
+  color: #2f3640;
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loan-contract-detail__notice {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #edf3ff;
+  color: #294575;
+  font-size: 16px;
+}
+
+.loan-contract-detail__notice--error {
+  background: #ffecec;
+  color: #8b1c24;
+}
+
+@media (max-width: 1320px) {
+  .loan-contract-detail__workspace {
+	grid-template-columns: 1fr;
+  }
+
+  .loan-contract-detail__card--contract {
+	grid-column: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .loan-contract-detail {
+	padding: 14px;
+  }
+
+  .loan-contract-detail__grid--two {
+	grid-template-columns: 1fr;
+  }
+
+  .loan-contract-detail__row-title {
+	flex-direction: column;
+	align-items: flex-start;
+  }
+}
+
