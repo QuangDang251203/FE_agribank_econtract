@@ -31,7 +31,7 @@ function LoginRightPanel() {
    */
   const handleInputChange = (event) => {
     const { id, value } = event.target;
-    
+
     // Map input IDs to formData keys
     const fieldMap = {
       orgCode: 'businessCode',

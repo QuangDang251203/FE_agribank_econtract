@@ -45,7 +45,6 @@ export const sidebarItems = [
     children: [
       { key: 'loan-create', label: 'Tạo khoản vay mới' },
       { key: 'loan-history', label: 'Lịch sử khoản vay' },
-      { key: 'admin-contracts', label: 'Danh sách hợp đồng (Admin)' },
     ],
   },
   {

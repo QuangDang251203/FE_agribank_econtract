@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { useCreateContract } from '../../hooks/useCreateContract';
 import '../../styles/loanContractDetailPage.css';
 
 const STATUS_META = {
   1: { label: 'Chờ ký', tone: 'pending' },
-  2: { label: 'Hoàn thành', tone: 'success' },
-  99: { label: 'Đã hủy', tone: 'danger' },
+  2: { label: 'Chờ phê duyệt', tone: 'pending' },
+  200: { label: 'Hoàn thành', tone: 'success' },
+  400: { label: 'Từ chối', tone: 'danger' },
 };
 
 const PAYMENT_META = {
@@ -85,11 +87,15 @@ function Field({ label, value }) {
 }
 
 function LoanContractDetailPage({ onNavigate, pageState }) {
+  const { user } = useAuth();
   const { fetchContractDetailByCode, fetchContractFileByCode } = useCreateContract();
   const [detailPayload, setDetailPayload] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openFileLoading, setOpenFileLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Xác định trang quay lại dựa trên loại user
+  const backPage = user?.businessCode === 'ADMIN' ? 'admin-contracts' : 'loan-history';
 
   const contractCode =
     pageState?.contractCode ||
@@ -235,7 +241,7 @@ function LoanContractDetailPage({ onNavigate, pageState }) {
           <button
             type="button"
             className="loan-contract-detail__back"
-            onClick={() => onNavigate?.('loan-history')}
+            onClick={() => onNavigate?.(backPage)}
             aria-label="Quay lai"
           >
             &lsaquo;
@@ -311,7 +317,7 @@ function LoanContractDetailPage({ onNavigate, pageState }) {
               <div className="loan-contract-detail__grid loan-contract-detail__grid--two">
                 <Field label="Khoản vay(VNĐ)" value={formatCurrency(mergedContract?.loanAmount)} />
                 <Field label="Bằng chữ" value={mergedContract?.loanAmountByWords} />
-                <Field label="Thời hạn vay" value={`${Number(mergedContract?.loanTerm) || 0} thang`} />
+                <Field label="Thời hạn vay" value={`${Number(mergedContract?.loanTerm) || 0} tháng`} />
                 <Field label="Lãi suất" value={formatRate(mergedContract?.interestRate)} />
                 <Field label="Phương thức trả" value={toPaymentLabel(mergedContract?.paymentMethod)} />
                 <Field label="Ngày hiệu lực" value={formatDate(mergedContract?.effectiveDate || mergedContract?.createdAt)} />

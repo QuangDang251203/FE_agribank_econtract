@@ -4,8 +4,9 @@ import '../../styles/adminContractsPage.css';
 
 const STATUS_META = {
   1: { label: 'Chờ ký', tone: 'pending' },
-  2: { label: 'Hoàn thành', tone: 'success' },
-  99: { label: 'Đã hủy', tone: 'danger' },
+  2: { label: 'Chờ phê duyệt', tone: 'pending' },
+  200: { label: 'Hoàn thành', tone: 'success' },
+  400: { label: 'Từ chối', tone: 'danger' },
 };
 
 function formatDate(value) {
@@ -45,6 +46,22 @@ function EyeIcon() {
     <svg viewBox="0 0 16 16" aria-hidden="true" className="admin-contracts-page__eye-icon">
       <path d="M1.8 8c1.7-2.7 3.8-4 6.2-4s4.5 1.3 6.2 4c-1.7 2.7-3.8 4-6.2 4S3.5 10.7 1.8 8Z" fill="none" stroke="currentColor" strokeWidth="1.3" />
       <circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+function ApproveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-contracts-page__action-icon">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function RejectIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="admin-contracts-page__action-icon">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor" />
     </svg>
   );
 }
@@ -178,18 +195,159 @@ function AdminContractsPage({ onNavigate }) {
 
   const handleOpenDetail = (row) => {
     if (!onNavigate) {
+      console.warn('onNavigate not available');
       return;
     }
 
-    const resolvedContractCode = row?.contractCode || row?.rawContract?.contractCode || '';
-    if (!resolvedContractCode) {
+    // Log để debug
+    console.log('Opening detail for row:', row);
+
+    // Thử lấy contractCode từ nhiều nơi
+    const contractCode = row?.contractCode || 
+                        row?.rawContract?.contractCode || 
+                        row?.contract?.contractCode ||
+                        '';
+
+    if (!contractCode) {
+      console.warn('No contract code found in row:', row);
+      alert('Không tìm thấy mã hợp đồng. Vui lòng thử lại.');
       return;
     }
+
+    console.log('Navigating to loan-history-detail with code:', contractCode);
 
     onNavigate('loan-history-detail', {
-      contractCode: resolvedContractCode,
-      contractData: row.rawContract,
+      contractCode: contractCode,
+      contractData: row.rawContract || row.contract || row,
     });
+  };
+
+  const handleApproveContract = async (row) => {
+    try {
+      const contractCode = row?.contractCode || row?.rawContract?.contractCode || '';
+      
+      console.log('Row data:', row);
+      console.log('Contract code:', contractCode);
+      
+      if (!contractCode) {
+        alert('Không tìm thấy mã hợp đồng');
+        return;
+      }
+
+      const confirmed = window.confirm(`Bạn có chắc chắn muốn phê duyệt hợp đồng ${contractCode}?`);
+      if (!confirmed) {
+        return;
+      }
+
+      setLoading(true);
+      
+      // Gọi API phê duyệt
+      const apiUrl = `/api/contract/admin/approve/${contractCode}`;
+      console.log('Calling API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.code === '00' || result.success) {
+        alert('Phê duyệt hợp đồng thành công!');
+        // Reload danh sách bằng cách set lại rows
+        const updatedRows = rows.map(r => {
+          if (r.id === row.id) {
+            return {
+              ...r,
+              statusRaw: 200,
+              statusLabel: 'Hoàn thành',
+              statusTone: 'success',
+            };
+          }
+          return r;
+        });
+        setRows(updatedRows);
+      } else {
+        throw new Error(result.message || 'Lỗi phê duyệt hợp đồng');
+      }
+    } catch (error) {
+      console.error('Error approving contract:', error);
+      alert(`Lỗi phê duyệt hợp đồng: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectContract = async (row) => {
+    try {
+      const contractCode = row?.contractCode || row?.rawContract?.contractCode || '';
+      
+      console.log('Row data:', row);
+      console.log('Contract code:', contractCode);
+      
+      if (!contractCode) {
+        alert('Không tìm thấy mã hợp đồng');
+        return;
+      }
+
+      const confirmed = window.confirm(`Bạn có chắc chắn muốn từ chối hợp đồng ${contractCode}?`);
+      if (!confirmed) {
+        return;
+      }
+
+      setLoading(true);
+      
+      // Gọi API từ chối
+      const apiUrl = `/contracts/admin/reject/${contractCode}`;
+      console.log('Calling API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.code === '00' || result.success) {
+        alert('Từ chối hợp đồng thành công!');
+        // Reload danh sách bằng cách set lại rows
+        const updatedRows = rows.map(r => {
+          if (r.id === row.id) {
+            return {
+              ...r,
+              statusRaw: 400,
+              statusLabel: 'Từ chối',
+              statusTone: 'danger',
+            };
+          }
+          return r;
+        });
+        setRows(updatedRows);
+      } else {
+        throw new Error(result.message || 'Lỗi từ chối hợp đồng');
+      }
+    } catch (error) {
+      console.error('Error rejecting contract:', error);
+      alert(`Lỗi từ chối hợp đồng: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -335,15 +493,38 @@ function AdminContractsPage({ onNavigate }) {
                             </span>
                           </td>
                           <td>
-                            <button
-                              type="button"
-                              className="admin-contracts-page__view-btn"
-                              title={`Mã hợp đồng ${row.contractCode}`}
-                              aria-label={`Xem chi tiết hợp đồng ${row.contractCode}`}
-                              onClick={() => handleOpenDetail(row)}
-                            >
-                              <EyeIcon />
-                            </button>
+                            <div className="admin-contracts-page__actions">
+                              <button
+                                type="button"
+                                className="admin-contracts-page__action-btn admin-contracts-page__action-btn--view"
+                                title={`Xem chi tiết hợp đồng ${row.contractCode}`}
+                                aria-label={`Xem chi tiết hợp đồng ${row.contractCode}`}
+                                onClick={() => {
+                                  console.log('View button clicked for:', row);
+                                  handleOpenDetail(row);
+                                }}
+                              >
+                                <EyeIcon />
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-contracts-page__action-btn admin-contracts-page__action-btn--approve"
+                                title="Phê duyệt"
+                                aria-label="Phê duyệt hợp đồng"
+                                onClick={() => handleApproveContract(row)}
+                              >
+                                <ApproveIcon />
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-contracts-page__action-btn admin-contracts-page__action-btn--reject"
+                                title="Từ chối"
+                                aria-label="Từ chối hợp đồng"
+                                onClick={() => handleRejectContract(row)}
+                              >
+                                <RejectIcon />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

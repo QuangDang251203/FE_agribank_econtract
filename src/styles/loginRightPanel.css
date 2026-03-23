@@ -158,8 +158,8 @@
   overflow: hidden;
   border: 1px solid #9ec5cb;
   background:
-    linear-gradient(180deg, rgba(186, 228, 233, 0.95), rgba(159, 217, 223, 0.95)),
-    repeating-linear-gradient(90deg, rgba(63, 93, 140, 0.16) 0 2px, transparent 2px 7px);
+          linear-gradient(180deg, rgba(186, 228, 233, 0.95), rgba(159, 217, 223, 0.95)),
+          repeating-linear-gradient(90deg, rgba(63, 93, 140, 0.16) 0 2px, transparent 2px 7px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,8 +172,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(118deg, transparent 0 27%, rgba(69, 93, 143, 0.25) 28% 30%, transparent 31% 100%),
-    linear-gradient(68deg, transparent 0 59%, rgba(69, 93, 143, 0.2) 60% 62%, transparent 63% 100%);
+          linear-gradient(118deg, transparent 0 27%, rgba(69, 93, 143, 0.25) 28% 30%, transparent 31% 100%),
+          linear-gradient(68deg, transparent 0 59%, rgba(69, 93, 143, 0.2) 60% 62%, transparent 63% 100%);
 }
 
 .login-right__captcha-image span {
@@ -266,4 +266,3 @@
     grid-template-columns: 1fr;
   }
 }
-

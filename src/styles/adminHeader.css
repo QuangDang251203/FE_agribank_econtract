@@ -1,0 +1,130 @@
+.admin-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 24px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.admin-header__container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.admin-header__logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.admin-header__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.admin-header__right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.admin-header__search {
+  width: 220px;
+  height: 40px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #666;
+  background: #f9f9f9;
+  transition: all 0.2s ease;
+}
+
+.admin-header__search:focus {
+  outline: none;
+  border-color: #AE1C3F;
+  background: #FFFFFF;
+}
+
+.admin-header__search::placeholder {
+  color: #999;
+}
+
+.admin-header__icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.admin-header__icon-btn:hover {
+  background: #f0f0f0;
+  color: #AE1C3F;
+}
+
+.admin-header__icon {
+  width: 24px;
+  height: 24px;
+}
+
+.admin-header__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.admin-header__user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #AE1C3F;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.admin-header__user-text {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .admin-header__search {
+    width: 150px;
+  }
+
+  .admin-header__title {
+    font-size: 16px;
+  }
+}
+

@@ -5,8 +5,9 @@ import '../../styles/loanHistoryPage.css';
 
 const STATUS_META = {
   1: { label: 'Chờ ký', tone: 'pending' },
-  2: { label: 'Hoàn thành', tone: 'success' },
-  99: { label: 'Đã hủy', tone: 'danger' },
+  2: { label: 'Chờ phê duyệt', tone: 'pending' },
+  200: { label: 'Hoàn thành', tone: 'success' },
+  400: { label: 'Từ chối', tone: 'danger' },
 };
 
 function formatDateTime(value) {
